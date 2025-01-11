@@ -1,4 +1,4 @@
-# VaaraYield AI - DeFi Yield Optimizer 
+# VaraYield AI - DeFi Yield Optimizer 
 
 ![image](https://github.com/user-attachments/assets/88cbd7d5-d5d3-4121-8d3b-67ad135c2eb1)
 
