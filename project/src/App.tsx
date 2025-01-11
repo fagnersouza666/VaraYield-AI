@@ -99,7 +99,7 @@ function App() {
         <div className="container mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-2">
             <TrendingUp className="h-6 w-6 text-blue-400" />
-            <span className="text-xl font-bold">VaraYield AI</span>
+            <span className="text-xl font-bold">SolanaYield AI</span>
           </div>
           <button className="flex items-center space-x-2 bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg transition-colors">
             <Wallet className="h-5 w-5" />
