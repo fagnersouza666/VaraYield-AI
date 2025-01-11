@@ -1,9 +1,10 @@
-# VaraYield AI - DeFi Yield Optimizer 
+# Vara Yield Optimizer
 
-![image](https://github.com/user-attachments/assets/88cbd7d5-d5d3-4121-8d3b-67ad135c2eb1)
+![image](https://github.com/user-attachments/assets/8b907b66-beb0-4fb1-8938-cd3b46fb2862)
 
 
-VaraYield AI is a decentralized yield optimizer built on Solana that uses artificial intelligence to dynamically allocate funds across various DeFi protocols for maximum returns. The platform simplifies DeFi yield farming by abstracting complex interactions into a single "Optimize" button while maintaining complete user control over risk preferences.
+
+VaraYield Optimizer is a decentralized yield optimizer built on Solana that uses artificial intelligence to dynamically allocate funds across various DeFi protocols for maximum returns. The platform simplifies DeFi yield farming by abstracting complex interactions into a single "Optimize" button while maintaining complete user control over risk preferences.
 
 ## 🚀 Features
 
