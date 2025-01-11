@@ -3,7 +3,7 @@
 ![image](https://github.com/user-attachments/assets/88cbd7d5-d5d3-4121-8d3b-67ad135c2eb1)
 
 
-SolanaYield AI is a decentralized yield optimizer built on Solana that uses artificial intelligence to dynamically allocate funds across various DeFi protocols for maximum returns. The platform simplifies DeFi yield farming by abstracting complex interactions into a single "Optimize" button while maintaining complete user control over risk preferences.
+VaraYield AI is a decentralized yield optimizer built on Solana that uses artificial intelligence to dynamically allocate funds across various DeFi protocols for maximum returns. The platform simplifies DeFi yield farming by abstracting complex interactions into a single "Optimize" button while maintaining complete user control over risk preferences.
 
 ## 🚀 Features
 
@@ -45,8 +45,8 @@ npm run dev
 
 1. Create a `.env` file in the root directory:
 ```env
-VITE_SOLANA_RPC_URL=your_rpc_url
-VITE_SOLANA_NETWORK=devnet  # or mainnet-beta
+VITE_VARA_RPC_URL=your_rpc_url
+VITE_VARA_NETWORK=devnet  # or mainnet-beta
 ```
 
 2. Configure your preferred Solana wallet (Phantom recommended)
@@ -73,7 +73,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🌟 Acknowledgments
 
-- Solana Foundation
+- VARA Foundation
 - Raydium Protocol
 - Serum DEX
 - Marinade Finance
