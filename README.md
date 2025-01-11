@@ -80,13 +80,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Marinade Finance
 - Port Finance
 
-## 🔗 Links
-
-- [Documentation](https://docs.solanayield.ai)
-- [Demo](https://demo.solanayield.ai)
-- [Twitter](https://twitter.com/solanayield)
-- [Discord](https://discord.gg/solanayield)
-
 ## 📊 Current Status
 
 - [x] Smart Contract Development
