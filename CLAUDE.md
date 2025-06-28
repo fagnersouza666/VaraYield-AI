@@ -5,6 +5,8 @@
 2. **NUNCA** crie arquivos desnecessários - apenas edite arquivos existentes
 3. **SEMPRE** use as bibliotecas e versões especificadas no arquivo de referência
 4. USE context7 para consultar documentações
+5. **NUNCA** utilize dados de exemplos, ou mockados ou demos
+8. **SEMPRE** use dados reais
 
 ## 🎯 Objetivos do Projeto
 - Criar um otimizador de yield DeFi para Solana

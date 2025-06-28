@@ -20,7 +20,6 @@ out/
 .env.development.local
 .env.test.local
 .env.production.local
-.env.example
 
 # IDE and editor files
 .vscode/
@@ -197,3 +196,5 @@ dist/
 .pnp.*
 
 .cursor/
+CLAUDE.md
+VARA_TECH_REFERENCES.md
