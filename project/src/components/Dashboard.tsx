@@ -1,17 +1,25 @@
 import React from 'react';
 import { TrendingUp, ArrowUpRight, ArrowDownRight, Zap } from 'lucide-react';
+import { useRaydiumData } from '../hooks/useRaydiumData';
+import { useAppStore } from '../store/useAppStore';
 
-interface DashboardProps {
-  selectedRiskLevel: 'low' | 'medium' | 'high';
-  onRiskLevelChange: (level: 'low' | 'medium' | 'high') => void;
-}
-
-const Dashboard: React.FC<DashboardProps> = ({ selectedRiskLevel, onRiskLevelChange }) => {
-  const protocols = [
-    { name: 'Raydium', apy: '12.5%', change: '+2.3%', positive: true },
-    { name: 'Serum', apy: '8.2%', change: '-1.1%', positive: false },
-    { name: 'Marinade', apy: '6.8%', change: '+0.5%', positive: true },
-  ];
+const Dashboard: React.FC = () => {
+  const { portfolioData, loading, optimizePortfolio } = useRaydiumData();
+  const { riskLevel, setRiskLevel, isOptimizing, setOptimizing, lastOptimizationTime, nextRebalanceTime, updateOptimizationTimes } = useAppStore();
+  
+  const handleOptimize = async () => {
+    try {
+      setOptimizing(true);
+      const result = await optimizePortfolio();
+      if (result) {
+        updateOptimizationTimes(result.lastOptimized, result.nextRebalance);
+      }
+    } catch (error) {
+      console.error('Optimization failed:', error);
+    } finally {
+      setOptimizing(false);
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -22,10 +30,10 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedRiskLevel, onRiskLevelCha
             <h3 className="text-white/90 text-sm font-medium">Total Value Locked</h3>
             <TrendingUp className="h-5 w-5 text-white/90" />
           </div>
-          <p className="mt-3 text-3xl font-bold text-white">$124,523.67</p>
+          <p className="mt-3 text-3xl font-bold text-white">${portfolioData.totalValueLocked.toLocaleString()}</p>
           <p className="mt-2 text-sm text-white/90 flex items-center">
             <ArrowUpRight className="h-4 w-4 mr-1" />
-            +2.5% from last week
+            +{portfolioData.weeklyChange.toFixed(1)}% from last week
           </p>
         </div>
 
@@ -36,7 +44,7 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedRiskLevel, onRiskLevelCha
               <TrendingUp className="h-5 w-5 text-green-400" />
             </div>
           </div>
-          <p className="mt-3 text-3xl font-bold text-white">8.92%</p>
+          <p className="mt-3 text-3xl font-bold text-white">{portfolioData.currentAPY.toFixed(2)}%</p>
           <p className="mt-2 text-sm text-green-400">Optimized returns</p>
         </div>
 
@@ -48,9 +56,9 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedRiskLevel, onRiskLevelCha
             {(['low', 'medium', 'high'] as const).map((level) => (
               <button
                 key={level}
-                onClick={() => onRiskLevelChange(level)}
+                onClick={() => setRiskLevel(level)}
                 className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
-                  selectedRiskLevel === level
+                  riskLevel === level
                     ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/30'
                     : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                 }`}
@@ -78,7 +86,7 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedRiskLevel, onRiskLevelCha
               <div className="text-sm font-medium text-gray-300">24h Change</div>
             </div>
             <div className="space-y-2">
-              {protocols.map((protocol, index) => (
+              {portfolioData.protocols.map((protocol, index) => (
                 <div
                   key={index}
                   className="grid grid-cols-3 gap-4 px-4 py-4 hover:bg-gray-700/30 transition-colors rounded-xl"
@@ -110,17 +118,21 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedRiskLevel, onRiskLevelCha
             <div className="space-y-2">
               <p className="text-sm text-gray-400 flex items-center">
                 <span className="w-32">Next rebalance:</span>
-                <span className="font-medium text-gray-200">2h 15m</span>
+                <span className="font-medium text-gray-200">{nextRebalanceTime}</span>
               </p>
               <p className="text-sm text-gray-400 flex items-center">
                 <span className="w-32">Last optimized:</span>
-                <span className="font-medium text-gray-200">Today, 14:30 UTC</span>
+                <span className="font-medium text-gray-200">{lastOptimizationTime}</span>
               </p>
             </div>
           </div>
-          <button className="flex items-center bg-indigo-600 text-white px-6 py-3 rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-900/20">
-            <Zap className="h-5 w-5 mr-2" />
-            Optimize Now
+          <button 
+            onClick={handleOptimize}
+            disabled={isOptimizing || loading}
+            className="flex items-center bg-indigo-600 text-white px-6 py-3 rounded-xl hover:bg-indigo-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors shadow-lg shadow-indigo-900/20"
+          >
+            <Zap className={`h-5 w-5 mr-2 ${isOptimizing ? 'animate-spin' : ''}`} />
+            {isOptimizing ? 'Optimizing...' : 'Optimize Now'}
           </button>
         </div>
       </div>

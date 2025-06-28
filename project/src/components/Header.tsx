@@ -1,10 +1,8 @@
 import React from 'react';
 import { BarChart3 } from 'lucide-react';
-import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 
 const Header = () => {
-  const { wallet } = useWallet();
 
   return (
     <header className="bg-gray-800 border-b border-gray-700">
@@ -19,7 +17,12 @@ const Header = () => {
               <p className="text-sm text-gray-400">Powered by AI</p>
             </div>
           </div>
-          <WalletMultiButton className="!bg-indigo-600 hover:!bg-indigo-700 text-white px-6 py-2.5 rounded-xl transition-colors shadow-lg shadow-indigo-900/20 font-medium" />
+          <div className="flex items-center space-x-4">
+            <div className="bg-indigo-600 px-4 py-2 rounded-xl text-white text-sm font-medium">
+              AI Powered
+            </div>
+            <WalletMultiButton className="!bg-indigo-600 hover:!bg-indigo-700 text-white px-6 py-2.5 rounded-xl transition-colors shadow-lg shadow-indigo-900/20 font-medium" />
+          </div>
         </div>
       </div>
     </header>
