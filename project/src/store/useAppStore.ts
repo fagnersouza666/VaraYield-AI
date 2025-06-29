@@ -1,21 +1,6 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-
-export type PageView = 'dashboard' | 'portfolio' | 'analytics' | 'risk-management' | 'settings';
-export type RiskLevel = 'low' | 'medium' | 'high';
-
-interface AppState {
-  currentPage: PageView;
-  riskLevel: RiskLevel;
-  isOptimizing: boolean;
-  lastOptimizationTime: string;
-  nextRebalanceTime: string;
-  
-  setCurrentPage: (page: PageView) => void;
-  setRiskLevel: (level: RiskLevel) => void;
-  setOptimizing: (isOptimizing: boolean) => void;
-  updateOptimizationTimes: (lastTime: string, nextTime: string) => void;
-}
+import type { AppState } from '../types';
 
 export const useAppStore = create<AppState>()(
   devtools(
@@ -31,6 +16,7 @@ export const useAppStore = create<AppState>()(
       setOptimizing: (isOptimizing) => set({ isOptimizing }),
       updateOptimizationTimes: (lastTime, nextTime) => 
         set({ lastOptimizationTime: lastTime, nextRebalanceTime: nextTime }),
-    })
+    }),
+    { name: 'app-store' }
   )
 );

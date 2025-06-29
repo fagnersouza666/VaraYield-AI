@@ -2,20 +2,27 @@ import React from 'react';
 import { TrendingUp, ArrowUpRight, ArrowDownRight, Zap } from 'lucide-react';
 import { useRaydiumData } from '../hooks/useRaydiumData';
 import { useAppStore } from '../store/useAppStore';
+import { logger } from '../shared/logger';
+import { RISK_LEVELS } from '../shared/constants';
 
 const Dashboard: React.FC = () => {
   const { portfolioData, loading, optimizePortfolio } = useRaydiumData();
   const { riskLevel, setRiskLevel, isOptimizing, setOptimizing, lastOptimizationTime, nextRebalanceTime, updateOptimizationTimes } = useAppStore();
   
-  const handleOptimize = async () => {
+  const handleOptimize = async (): Promise<void> => {
     try {
       setOptimizing(true);
+      logger.info('User initiated portfolio optimization');
+      
       const result = await optimizePortfolio();
       if (result) {
         updateOptimizationTimes(result.lastOptimized, result.nextRebalance);
+        logger.info('Portfolio optimization completed successfully');
       }
     } catch (error) {
-      console.error('Optimization failed:', error);
+      logger.error('Portfolio optimization failed', { 
+        error: error instanceof Error ? error.message : String(error) 
+      });
     } finally {
       setOptimizing(false);
     }
@@ -53,7 +60,7 @@ const Dashboard: React.FC = () => {
             <h3 className="text-gray-400 text-sm font-medium">Risk Level</h3>
           </div>
           <div className="flex space-x-3">
-            {(['low', 'medium', 'high'] as const).map((level) => (
+            {RISK_LEVELS.map((level) => (
               <button
                 key={level}
                 onClick={() => setRiskLevel(level)}

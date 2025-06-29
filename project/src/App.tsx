@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from 'react';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import { useAppStore } from './store/useAppStore';
+import { PAGE_VIEWS } from './shared/constants';
 
 // Lazy loading das páginas
 const Dashboard = lazy(() => import('./components/Dashboard'));
@@ -13,34 +14,34 @@ const Settings = lazy(() => import('./components/Settings'));
 function App() {
   const { currentPage } = useAppStore();
 
-  const renderCurrentPage = () => {
-    const LoadingSpinner = () => (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
-      </div>
-    );
+  const LoadingSpinner = () => (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+    </div>
+  );
 
-    return (
-      <Suspense fallback={<LoadingSpinner />}>
-        {(() => {
-          switch (currentPage) {
-            case 'dashboard':
-              return <Dashboard />;
-            case 'portfolio':
-              return <Portfolio />;
-            case 'analytics':
-              return <Analytics />;
-            case 'risk-management':
-              return <RiskManagement />;
-            case 'settings':
-              return <Settings />;
-            default:
-              return <Dashboard />;
-          }
-        })()}
-      </Suspense>
-    );
+  const renderPageComponent = () => {
+    switch (currentPage) {
+      case PAGE_VIEWS.DASHBOARD:
+        return <Dashboard />;
+      case PAGE_VIEWS.PORTFOLIO:
+        return <Portfolio />;
+      case PAGE_VIEWS.ANALYTICS:
+        return <Analytics />;
+      case PAGE_VIEWS.RISK_MANAGEMENT:
+        return <RiskManagement />;
+      case PAGE_VIEWS.SETTINGS:
+        return <Settings />;
+      default:
+        return <Dashboard />;
+    }
   };
+
+  const renderCurrentPage = () => (
+    <Suspense fallback={<LoadingSpinner />}>
+      {renderPageComponent()}
+    </Suspense>
+  );
 
   return (
     <div className="min-h-screen bg-gray-900">
