@@ -1,31 +1,45 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import Header from './components/Header';
-import Dashboard from './components/Dashboard';
-import Portfolio from './components/Portfolio';
-import Analytics from './components/Analytics';
-import RiskManagement from './components/RiskManagement';
-import Settings from './components/Settings';
 import Sidebar from './components/Sidebar';
 import { useAppStore } from './store/useAppStore';
+
+// Lazy loading das páginas
+const Dashboard = lazy(() => import('./components/Dashboard'));
+const Portfolio = lazy(() => import('./components/Portfolio'));
+const Analytics = lazy(() => import('./components/Analytics'));
+const RiskManagement = lazy(() => import('./components/RiskManagement'));
+const Settings = lazy(() => import('./components/Settings'));
 
 function App() {
   const { currentPage } = useAppStore();
 
   const renderCurrentPage = () => {
-    switch (currentPage) {
-      case 'dashboard':
-        return <Dashboard />;
-      case 'portfolio':
-        return <Portfolio />;
-      case 'analytics':
-        return <Analytics />;
-      case 'risk-management':
-        return <RiskManagement />;
-      case 'settings':
-        return <Settings />;
-      default:
-        return <Dashboard />;
-    }
+    const LoadingSpinner = () => (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+      </div>
+    );
+
+    return (
+      <Suspense fallback={<LoadingSpinner />}>
+        {(() => {
+          switch (currentPage) {
+            case 'dashboard':
+              return <Dashboard />;
+            case 'portfolio':
+              return <Portfolio />;
+            case 'analytics':
+              return <Analytics />;
+            case 'risk-management':
+              return <RiskManagement />;
+            case 'settings':
+              return <Settings />;
+            default:
+              return <Dashboard />;
+          }
+        })()}
+      </Suspense>
+    );
   };
 
   return (

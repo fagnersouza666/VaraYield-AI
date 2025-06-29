@@ -36,7 +36,9 @@ export const useRaydiumData = () => {
   const [error, setError] = useState<string | null>(null);
 
   const initializeRaydium = useCallback(async () => {
-    if (!connection || !publicKey) return;
+    if (!connection || !publicKey) {
+      return;
+    }
     
     try {
       setLoading(true);
@@ -56,7 +58,9 @@ export const useRaydiumData = () => {
   }, [connection, publicKey, signAllTransactions]);
 
   const fetchPoolData = useCallback(async () => {
-    if (!raydium) return;
+    if (!raydium) {
+      return;
+    }
     
     try {
       setLoading(true);
