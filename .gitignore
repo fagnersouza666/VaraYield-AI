@@ -199,4 +199,4 @@ dist/
 CLAUDE.md
 VARA_TECH_REFERENCES.md
 imagem.png
-.claude/
+./claude
