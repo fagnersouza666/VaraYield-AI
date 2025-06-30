@@ -10,12 +10,17 @@ export const APP_CONFIG = {
     GRID_COLS_MD: 3,
     CARD_PADDING: 6,
     BORDER_RADIUS: '2xl',
+    LANGUAGE_OPTIONS: ['English', 'Spanish', 'Chinese'],
+    SLIPPAGE_OPTIONS: ['0.5%', '1%', '3%'],
+    GAS_PRICE_OPTIONS: ['Fast', 'Standard', 'Safe'],
   },
   PORTFOLIO: {
     DEFAULT_TOTAL_VALUE: 124523.67,
     DEFAULT_APY: 8.92,
     DEFAULT_WEEKLY_CHANGE: 2.5,
     TOP_POOLS_LIMIT: 3,
+    DEFAULT_LAST_OPTIMIZATION: 'Today, 14:30 UTC',
+    DEFAULT_NEXT_REBALANCE: '2h 15m',
   },
   DATE_TIME: {
     UTC_TIMEZONE: 'UTC',
@@ -24,6 +29,10 @@ export const APP_CONFIG = {
       hour: '2-digit' as const,
       minute: '2-digit' as const,
     },
+  },
+  APP: {
+    VERSION: 'v1.0.0',
+    NAME: 'VaraYield AI',
   },
 } as const;
 

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { AppState } from '../types';
+import { APP_CONFIG } from '../shared/constants';
 
 export const useAppStore = create<AppState>()(
   devtools(
@@ -8,8 +9,8 @@ export const useAppStore = create<AppState>()(
       currentPage: 'dashboard',
       riskLevel: 'high',
       isOptimizing: false,
-      lastOptimizationTime: 'Today, 14:30 UTC',
-      nextRebalanceTime: '2h 15m',
+      lastOptimizationTime: APP_CONFIG.PORTFOLIO.DEFAULT_LAST_OPTIMIZATION,
+      nextRebalanceTime: APP_CONFIG.PORTFOLIO.DEFAULT_NEXT_REBALANCE,
       
       setCurrentPage: (page) => set({ currentPage: page }),
       setRiskLevel: (level) => set({ riskLevel: level }),
