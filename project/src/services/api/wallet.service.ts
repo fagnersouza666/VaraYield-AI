@@ -38,16 +38,20 @@ export class SolanaWalletService implements WalletService {
   }
 
   async getWalletBalances(publicKey: PublicKey): Promise<WalletBalance> {
+    console.log('🔍 Fetching wallet balances for:', publicKey.toString());
+    
     try {
       // Get SOL balance with retry logic
       let solBalance: number;
       let solBalanceFormatted: number;
       
       try {
+        console.log('📡 Fetching SOL balance...');
         solBalance = await this.retryOperation(() => this.connection.getBalance(publicKey));
         solBalanceFormatted = solBalance / 1e9; // Convert lamports to SOL
+        console.log('💰 SOL balance:', solBalanceFormatted, 'SOL');
       } catch (solError) {
-        console.warn('Failed to fetch SOL balance, using 0:', solError);
+        console.warn('⚠️ Failed to fetch SOL balance, using 0:', solError);
         solBalance = 0;
         solBalanceFormatted = 0;
       }
@@ -55,14 +59,16 @@ export class SolanaWalletService implements WalletService {
       // Get token accounts with proper error handling and retry
       let tokenAccounts;
       try {
+        console.log('🪙 Fetching token accounts...');
         tokenAccounts = await this.retryOperation(() => 
           this.connection.getParsedTokenAccountsByOwner(
             publicKey,
             { programId: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA') }
           )
         );
+        console.log('📊 Found', tokenAccounts.value.length, 'token accounts');
       } catch (tokenError) {
-        console.warn('Failed to fetch token accounts, using empty array:', tokenError);
+        console.warn('⚠️ Failed to fetch token accounts, using empty array:', tokenError);
         tokenAccounts = { value: [] };
       }
 
@@ -128,6 +134,11 @@ export class SolanaWalletService implements WalletService {
 
       const totalValue = solValue + tokenBalancesWithValues.reduce((sum, token) => sum + (token.value || 0), 0);
 
+      console.log('💼 Final wallet summary:');
+      console.log('  - SOL:', solBalanceFormatted, 'SOL ($' + solValue.toFixed(2) + ')');
+      console.log('  - Tokens:', tokenBalancesWithValues.length);
+      console.log('  - Total Value: $' + totalValue.toFixed(2));
+
       return {
         solBalance: solBalanceFormatted,
         tokenBalances: tokenBalancesWithValues,
@@ -189,53 +200,81 @@ export class SolanaWalletService implements WalletService {
 
   async getTokenPrices(mints: string[]): Promise<TokenPrice[]> {
     try {
-      // Mock prices for development - in production, use real price API
-      const mockPrices: Record<string, TokenPrice> = {
-        'So11111111111111111111111111111111111111112': {
-          mint: 'So11111111111111111111111111111111111111112',
-          price: 98.45,
-          change24h: 5.2,
-          marketCap: 42000000000,
-          volume24h: 1500000000,
-        },
-        'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': {
-          mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-          price: 1.0,
-          change24h: 0.01,
-          marketCap: 25000000000,
-          volume24h: 2000000000,
-        },
-        '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R': {
-          mint: '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R',
-          price: 2.34,
-          change24h: -1.8,
-          marketCap: 234000000,
-          volume24h: 15000000,
-        },
-        'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB': {
-          mint: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB',
-          price: 1.0,
-          change24h: -0.02,
-          marketCap: 24000000000,
-          volume24h: 1800000000,
-        },
-        'mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So': {
-          mint: 'mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So',
-          price: 105.67,
-          change24h: 4.8,
-          marketCap: 450000000,
-          volume24h: 25000000,
-        },
-      };
+      console.log('💰 Fetching real prices for tokens:', mints);
+      
+      // Use CoinGecko API for real price data
+      const solanaTokens = mints.map(mint => {
+        // Map Solana mint addresses to CoinGecko IDs
+        const tokenMap: Record<string, string> = {
+          'So11111111111111111111111111111111111111112': 'solana',
+          'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': 'usd-coin',
+          '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R': 'raydium',
+          'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB': 'tether',
+          'mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So': 'marinade-staked-sol',
+        };
+        return tokenMap[mint] || null;
+      }).filter(Boolean);
 
-      return mints.map(mint => mockPrices[mint] || {
-        mint,
-        price: 0,
-        change24h: 0,
+      if (solanaTokens.length === 0) {
+        return mints.map(mint => ({ mint, price: 0, change24h: 0 }));
+      }
+
+      // Fetch prices from CoinGecko (free tier, no API key needed)
+      const response = await fetch(
+        `https://api.coingecko.com/api/v3/simple/price?ids=${solanaTokens.join(',')}&vs_currencies=usd&include_24hr_change=true&include_market_cap=true&include_24hr_vol=true`,
+        {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`CoinGecko API error: ${response.status}`);
+      }
+
+      const priceData = await response.json();
+      console.log('📈 Price data received:', priceData);
+
+      // Map back to our format
+      return mints.map(mint => {
+        const tokenMap: Record<string, string> = {
+          'So11111111111111111111111111111111111111112': 'solana',
+          'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': 'usd-coin',
+          '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R': 'raydium',
+          'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB': 'tether',
+          'mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So': 'marinade-staked-sol',
+        };
+        
+        const coinGeckoId = tokenMap[mint];
+        const data = coinGeckoId ? priceData[coinGeckoId] : null;
+
+        return {
+          mint,
+          price: data?.usd || 0,
+          change24h: data?.usd_24h_change || 0,
+          marketCap: data?.usd_market_cap,
+          volume24h: data?.usd_24h_vol,
+        };
       });
     } catch (error) {
-      console.error('Failed to get token prices:', error);
-      throw new RaydiumError('Failed to fetch token prices', { mints, error });
+      console.warn('Failed to fetch real prices, using fallback:', error);
+      
+      // Fallback to basic prices if API fails
+      return mints.map(mint => {
+        const fallbackPrices: Record<string, number> = {
+          'So11111111111111111111111111111111111111112': 100, // Approximate SOL price
+          'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': 1, // USDC
+          'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB': 1, // USDT
+        };
+        
+        return {
+          mint,
+          price: fallbackPrices[mint] || 0,
+          change24h: 0,
+        };
+      });
     }
   }
 

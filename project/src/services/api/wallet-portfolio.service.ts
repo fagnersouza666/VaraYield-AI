@@ -31,7 +31,14 @@ export class WalletPortfolioService implements PortfolioService {
     }
 
     try {
+      console.log('🔄 Getting portfolio for wallet:', this.publicKey.toString());
       const walletBalance = await this.walletService.getWalletBalances(this.publicKey);
+      
+      console.log('📊 Wallet data:', {
+        solBalance: walletBalance.solBalance,
+        tokenCount: walletBalance.tokenBalances.length,
+        totalValue: walletBalance.totalValue
+      });
       
       // Convert wallet balances to portfolio positions
       const positions = await this.convertTokenBalancesToPositions(walletBalance.tokenBalances);
@@ -64,10 +71,8 @@ export class WalletPortfolioService implements PortfolioService {
         updatedAt: new Date().toISOString(),
       };
 
-      // Only add SOL position if balance > 0
-      if (walletBalance.solBalance > 0) {
-        positions.unshift(solPosition);
-      }
+      // Always add SOL position to show wallet structure, even with 0 balance
+      positions.unshift(solPosition);
 
       // Recalculate allocations with correct total
       const finalTotalValue = Math.max(totalValueWithSol, 0.01); // Avoid division by zero
@@ -264,6 +269,7 @@ export class WalletPortfolioService implements PortfolioService {
 
     return knownAssets;
   }
+
 
   private getPeriodDays(period: PortfolioPerformance['period']): number {
     switch (period) {

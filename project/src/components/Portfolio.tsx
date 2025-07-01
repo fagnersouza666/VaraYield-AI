@@ -92,8 +92,8 @@ const Portfolio: React.FC = React.memo(() => {
     );
   }
 
-  // Show empty state if no positions
-  if (portfolio.positions.length === 0 && portfolio.summary.totalValue === 0) {
+  // Show empty state if no positions (but still show wallet info)
+  if (portfolio.positions.length === 0) {
     return (
       <div className="space-y-8">
         {/* Header */}
