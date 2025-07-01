@@ -116,7 +116,10 @@ export class WalletPortfolioService implements PortfolioService {
 
       for (const tokenBalance of tokenBalances) {
         try {
-          if (tokenBalance.uiAmount > 0) {
+          // Include all tokens, even very small amounts (LP tokens can have tiny values but be worth something)
+          if (tokenBalance.uiAmount >= 0) {
+            console.log(`🔄 Processing token: ${tokenBalance.symbol} (${tokenBalance.uiAmount})`);
+            
             const asset: Asset = {
               id: tokenBalance.mint.toLowerCase(),
               symbol: tokenBalance.symbol || 'UNKNOWN',

@@ -58,49 +58,102 @@ export class SolanaWalletService implements WalletService {
 
       // Get token accounts with proper error handling and retry
       let tokenAccounts;
+      let token2022Accounts;
+      
       try {
-        console.log('🪙 Fetching token accounts...');
+        console.log('🪙 Fetching SPL token accounts...');
         tokenAccounts = await this.retryOperation(() => 
           this.connection.getParsedTokenAccountsByOwner(
             publicKey,
             { programId: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA') }
           )
         );
-        console.log('📊 Found', tokenAccounts.value.length, 'token accounts');
+        console.log('📊 Found', tokenAccounts.value.length, 'SPL token accounts');
       } catch (tokenError) {
-        console.warn('⚠️ Failed to fetch token accounts, using empty array:', tokenError);
+        console.warn('⚠️ Failed to fetch SPL token accounts, using empty array:', tokenError);
         tokenAccounts = { value: [] };
       }
+
+      // Also check for Token-2022 program accounts
+      try {
+        console.log('🪙 Fetching Token-2022 accounts...');
+        token2022Accounts = await this.retryOperation(() => 
+          this.connection.getParsedTokenAccountsByOwner(
+            publicKey,
+            { programId: new PublicKey('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb') }
+          )
+        );
+        console.log('📊 Found', token2022Accounts.value.length, 'Token-2022 accounts');
+      } catch (token2022Error) {
+        console.warn('⚠️ Failed to fetch Token-2022 accounts, using empty array:', token2022Error);
+        token2022Accounts = { value: [] };
+      }
+
+      // Combine all token accounts
+      const allTokenAccounts = [
+        ...tokenAccounts.value,
+        ...token2022Accounts.value
+      ];
+      
+      console.log('📊 Total token accounts (combined):', allTokenAccounts.length);
 
       // Process token balances with safety checks
       const tokenBalances: TokenBalance[] = [];
       
-      for (const account of tokenAccounts.value) {
+      console.log('🔍 Processing', allTokenAccounts.length, 'token accounts...');
+      
+      for (let i = 0; i < allTokenAccounts.length; i++) {
+        const account = allTokenAccounts[i];
         try {
+          console.log(`📄 Account ${i + 1}:`, {
+            pubkey: account.pubkey.toString(),
+            owner: account.account.owner.toString(),
+            lamports: account.account.lamports
+          });
+
           const parsedData = account.account.data as ParsedAccountData;
           const tokenInfo = parsedData?.parsed?.info;
           
-          if (tokenInfo?.tokenAmount?.uiAmount && tokenInfo.tokenAmount.uiAmount > 0) {
+          console.log(`🪙 Token info for account ${i + 1}:`, {
+            mint: tokenInfo?.mint,
+            tokenAmount: tokenInfo?.tokenAmount,
+            state: tokenInfo?.state,
+            owner: tokenInfo?.owner
+          });
+
+          // Include ALL tokens, even with 0 balance for debugging
+          if (tokenInfo?.mint && tokenInfo?.tokenAmount) {
             const mint = tokenInfo.mint;
             const knownToken = KNOWN_TOKENS[mint];
+            const uiAmount = tokenInfo.tokenAmount.uiAmount || 0;
             
             const tokenBalance: TokenBalance = {
               mint,
-              symbol: knownToken?.symbol || 'UNKNOWN',
-              name: knownToken?.name || 'Unknown Token',
+              symbol: knownToken?.symbol || `TOKEN_${mint.slice(0, 8)}`,
+              name: knownToken?.name || `Unknown Token (${mint.slice(0, 8)})`,
               balance: parseInt(tokenInfo.tokenAmount.amount || '0'),
               decimals: tokenInfo.tokenAmount.decimals || 0,
-              uiAmount: tokenInfo.tokenAmount.uiAmount || 0,
+              uiAmount,
               logoUri: knownToken?.logoUri,
             };
             
+            console.log(`✅ Added token ${i + 1}:`, {
+              symbol: tokenBalance.symbol,
+              uiAmount: tokenBalance.uiAmount,
+              mint: mint.slice(0, 8) + '...'
+            });
+            
             tokenBalances.push(tokenBalance);
+          } else {
+            console.log(`❌ Skipped account ${i + 1}: missing mint or tokenAmount`);
           }
         } catch (parseError) {
-          console.warn('Failed to parse token account:', parseError);
-          continue; // Skip this token and continue with others
+          console.warn(`⚠️ Failed to parse token account ${i + 1}:`, parseError);
+          continue;
         }
       }
+
+      console.log('📊 Total tokens found:', tokenBalances.length);
 
       // Get token prices with error handling
       let prices;
@@ -211,6 +264,11 @@ export class SolanaWalletService implements WalletService {
           '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R': 'raydium',
           'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB': 'tether',
           'mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So': 'marinade-staked-sol',
+          'SRMuApVNdxXokk5GT7XD5cUUgXMBCoAz2LHeuAoKWRt': 'serum',
+          'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263': 'bonk',
+          'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN': 'jupiter-exchange-solana',
+          'hntyVP6YFm1Hg25TN9WGLqM12b8TQmcknKrdu1oxWux': 'helium',
+          'So11111111111111111111111111111111111111111': 'solana', // wSOL same as SOL
         };
         return tokenMap[mint] || null;
       }).filter(Boolean);
@@ -245,6 +303,11 @@ export class SolanaWalletService implements WalletService {
           '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R': 'raydium',
           'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB': 'tether',
           'mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So': 'marinade-staked-sol',
+          'SRMuApVNdxXokk5GT7XD5cUUgXMBCoAz2LHeuAoKWRt': 'serum',
+          'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263': 'bonk',
+          'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN': 'jupiter-exchange-solana',
+          'hntyVP6YFm1Hg25TN9WGLqM12b8TQmcknKrdu1oxWux': 'helium',
+          'So11111111111111111111111111111111111111111': 'solana', // wSOL same as SOL
         };
         
         const coinGeckoId = tokenMap[mint];

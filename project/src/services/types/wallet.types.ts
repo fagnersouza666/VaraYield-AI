@@ -102,4 +102,47 @@ export const KNOWN_TOKENS: Record<string, KnownToken> = {
     logoUri: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/SRMuApVNdxXokk5GT7XD5cUUgXMBCoAz2LHeuAoKWRt/logo.png',
     coingeckoId: 'serum',
   },
+  // More popular tokens
+  'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263': {
+    mint: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263',
+    symbol: 'BONK',
+    name: 'Bonk',
+    decimals: 5,
+    coingeckoId: 'bonk',
+  },
+  'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN': {
+    mint: 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN',
+    symbol: 'JUP',
+    name: 'Jupiter',
+    decimals: 6,
+    coingeckoId: 'jupiter-exchange-solana',
+  },
+  'hntyVP6YFm1Hg25TN9WGLqM12b8TQmcknKrdu1oxWux': {
+    mint: 'hntyVP6YFm1Hg25TN9WGLqM12b8TQmcknKrdu1oxWux',
+    symbol: 'HNT',
+    name: 'Helium',
+    decimals: 8,
+    coingeckoId: 'helium',
+  },
+  'So11111111111111111111111111111111111111111': {
+    mint: 'So11111111111111111111111111111111111111111',
+    symbol: 'wSOL',
+    name: 'Wrapped SOL',
+    decimals: 9,
+    coingeckoId: 'solana',
+  },
+  // Orca LP tokens (common pools)
+  '2uRjKj9gLrUwynwJy3dmbVe2Xc7k1DouRsktW6kR1WBg': {
+    mint: '2uRjKj9gLrUwynwJy3dmbVe2Xc7k1DouRsktW6kR1WBg',
+    symbol: 'ORCA-LP',
+    name: 'Orca LP Token',
+    decimals: 6,
+  },
+  // Raydium LP tokens
+  '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM': {
+    mint: '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM',
+    symbol: 'RAY-LP',
+    name: 'Raydium LP Token',
+    decimals: 6,
+  },
 };
