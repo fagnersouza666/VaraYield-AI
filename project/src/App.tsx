@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import { QueryProvider } from './contexts/QueryProvider';
 import { ServiceProvider } from './services/service-provider';
+import { WalletProvider } from './components/WalletProvider';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { LoadingSpinner } from './components/ui/LoadingSpinner';
 import Header from './components/Header';
@@ -68,11 +69,13 @@ function App() {
         console.error('App-level error:', error, errorInfo);
       }}
     >
-      <QueryProvider>
-        <ServiceProvider>
-          <AppContent />
-        </ServiceProvider>
-      </QueryProvider>
+      <WalletProvider>
+        <QueryProvider>
+          <ServiceProvider>
+            <AppContent />
+          </ServiceProvider>
+        </QueryProvider>
+      </WalletProvider>
     </ErrorBoundary>
   );
 }

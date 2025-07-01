@@ -1,6 +1,8 @@
 import React, { useCallback, useState } from 'react';
-import { Plus, RefreshCw, Settings } from 'lucide-react';
-import { usePortfolioDashboard, useRemovePosition } from '../hooks/queries/usePortfolio';
+import { Plus, RefreshCw, Settings, Wallet } from 'lucide-react';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { useWalletPortfolioDashboard } from '../hooks/queries/useWalletPortfolio';
 import { ErrorMessage } from './ui/ErrorMessage';
 import { LoadingSpinner } from './ui/LoadingSpinner';
 import { PortfolioOverview } from './portfolio/PortfolioOverview';
@@ -11,15 +13,16 @@ import { Position } from '../services/types/portfolio.types';
 const Portfolio: React.FC = React.memo(() => {
   const [selectedPosition, setSelectedPosition] = useState<Position | null>(null);
   const [showAddPosition, setShowAddPosition] = useState(false);
+  const { connected } = useWallet();
 
   const {
     portfolio,
     isLoading,
-    portfolioError,
+    error,
     refetchAll,
-  } = usePortfolioDashboard();
-
-  const removePositionMutation = useRemovePosition();
+    isWalletConnected,
+    walletAddress,
+  } = useWalletPortfolioDashboard();
 
   const handleRefresh = useCallback(() => {
     refetchAll();
@@ -31,35 +34,44 @@ const Portfolio: React.FC = React.memo(() => {
   }, []);
 
   const handleRemovePosition = useCallback(async (positionId: string) => {
-    if (!window.confirm('Are you sure you want to remove this position?')) {
-      return;
-    }
-
-    try {
-      await removePositionMutation.mutateAsync(positionId);
-    } catch (error) {
-      console.error('Failed to remove position:', error);
-    }
-  }, [removePositionMutation]);
-
-  const handleAddPosition = useCallback(() => {
-    setShowAddPosition(true);
-    // TODO: Open add position modal
+    // For wallet portfolio, positions cannot be removed programmatically
+    alert('To remove tokens from your portfolio, use your Solana wallet to transfer or swap them.');
   }, []);
 
-  if (isLoading) {
+  const handleAddPosition = useCallback(() => {
+    // For wallet portfolio, direct to external wallet or DEX
+    alert('To add tokens to your portfolio, use your Solana wallet or a DEX like Raydium to acquire tokens.');
+  }, []);
+
+  // Show wallet connection prompt if not connected
+  if (!isWalletConnected) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <LoadingSpinner size="lg" text="Loading portfolio..." />
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-center space-y-6">
+        <Wallet className="h-16 w-16 text-gray-500" />
+        <div>
+          <h2 className="text-2xl font-bold text-white mb-2">Connect Your Wallet</h2>
+          <p className="text-gray-400 mb-6">
+            Connect your Solana wallet to view your portfolio and track your assets
+          </p>
+          <WalletMultiButton className="!bg-blue-600 hover:!bg-blue-700" />
+        </div>
       </div>
     );
   }
 
-  if (portfolioError) {
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <LoadingSpinner size="lg" text="Loading wallet portfolio..." />
+      </div>
+    );
+  }
+
+  if (error) {
     return (
       <div className="p-8">
         <ErrorMessage
-          error={portfolioError}
+          error={error}
           title="Portfolio Error"
           onRetry={handleRefresh}
           showDetails={true}
@@ -73,7 +85,7 @@ const Portfolio: React.FC = React.memo(() => {
       <div className="p-8">
         <ErrorMessage
           title="No Portfolio Data"
-          message="Unable to load portfolio information"
+          message="Unable to load wallet portfolio information"
           onRetry={handleRefresh}
         />
       </div>
@@ -85,9 +97,9 @@ const Portfolio: React.FC = React.memo(() => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white">Portfolio</h1>
+          <h1 className="text-3xl font-bold text-white">My Wallet Portfolio</h1>
           <p className="text-gray-400 mt-1">
-            Track and manage your DeFi positions
+            {walletAddress ? `${walletAddress.slice(0, 8)}...${walletAddress.slice(-8)}` : 'Loading wallet...'}
           </p>
         </div>
         
@@ -101,18 +113,7 @@ const Portfolio: React.FC = React.memo(() => {
             Refresh
           </button>
           
-          <button
-            onClick={handleAddPosition}
-            className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Position
-          </button>
-          
-          <button className="flex items-center px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors">
-            <Settings className="h-4 w-4 mr-2" />
-            Settings
-          </button>
+          <WalletMultiButton className="!bg-blue-600 hover:!bg-blue-700 !h-10" />
         </div>
       </div>
 
@@ -132,37 +133,29 @@ const Portfolio: React.FC = React.memo(() => {
             positions={portfolio.positions}
             onEditPosition={handleEditPosition}
             onRemovePosition={handleRemovePosition}
-            isLoading={removePositionMutation.isPending}
+            isLoading={false}
           />
         </div>
       </div>
 
-      {/* Performance & Analytics Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-          <h3 className="text-lg font-semibold text-white mb-4">Recent Activity</h3>
-          <p className="text-gray-400 text-sm">
-            Transaction history and recent changes will be displayed here.
-          </p>
-          {/* TODO: Add recent transactions component */}
-        </div>
-
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-          <h3 className="text-lg font-semibold text-white mb-4">Performance Chart</h3>
-          <p className="text-gray-400 text-sm">
-            Portfolio performance visualization will be displayed here.
-          </p>
-          {/* TODO: Add performance chart component */}
-        </div>
-      </div>
-
-      {/* Rebalance Recommendations */}
+      {/* Wallet Info */}
       <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-        <h3 className="text-lg font-semibold text-white mb-4">Rebalance Recommendations</h3>
-        <p className="text-gray-400 text-sm">
-          AI-powered portfolio optimization suggestions will be displayed here.
-        </p>
-        {/* TODO: Add rebalance recommendations component */}
+        <h3 className="text-lg font-semibold text-white mb-4">Wallet Information</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <h4 className="text-sm font-medium text-gray-400 mb-2">Wallet Address</h4>
+            <p className="text-white font-mono text-sm break-all">{walletAddress}</p>
+          </div>
+          <div>
+            <h4 className="text-sm font-medium text-gray-400 mb-2">Network</h4>
+            <p className="text-white">Solana Mainnet</p>
+          </div>
+        </div>
+        <div className="mt-4 pt-4 border-t border-gray-700">
+          <p className="text-xs text-gray-500">
+            This portfolio displays your actual Solana wallet holdings. To manage your tokens, use your connected wallet or visit a DEX like Raydium.
+          </p>
+        </div>
       </div>
     </div>
   );
