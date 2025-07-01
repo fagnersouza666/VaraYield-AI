@@ -96,22 +96,16 @@ export const useWalletPortfolio = (enabled: boolean = true) => {
     }
   }, [queryClient, connected, publicKey]);
 
-  // Set up real-time updates
+  // Set up real-time updates (disabled for now to prevent performance issues)
   useEffect(() => {
     if (!connected || !publicKey) return;
 
-    const walletService = new SolanaWalletService(connection);
+    // Real-time updates can be resource intensive and cause loops
+    // For now, we'll rely on manual refresh and periodic polling
+    // TODO: Implement more efficient real-time updates later
     
-    const unsubscribe = walletService.subscribeToBalanceUpdates(
-      publicKey,
-      () => {
-        // Refresh portfolio data when balance changes
-        refreshPortfolio();
-      }
-    );
-
-    return unsubscribe;
-  }, [connected, publicKey, connection, refreshPortfolio]);
+    return () => {}; // No cleanup needed
+  }, [connected, publicKey, connection]);
 
   return {
     ...portfolioQuery,

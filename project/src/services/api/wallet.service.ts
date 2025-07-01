@@ -240,40 +240,12 @@ export class SolanaWalletService implements WalletService {
   }
 
   subscribeToBalanceUpdates(publicKey: PublicKey, callback: (balance: WalletBalance) => void): () => void {
-    let isSubscribed = true;
+    // Simplified implementation - just return a no-op cleanup function
+    // Real-time subscriptions can cause performance issues and infinite loops
+    console.log('Balance updates subscription disabled for performance');
     
-    const updateBalances = async () => {
-      if (!isSubscribed) return;
-      
-      try {
-        const balance = await this.getWalletBalances(publicKey);
-        callback(balance);
-      } catch (error) {
-        console.error('Failed to update balances:', error);
-      }
-    };
-
-    // Initial load
-    updateBalances();
-
-    // Set up periodic updates (every 30 seconds)
-    const interval = setInterval(updateBalances, 30000);
-
-    // Subscribe to account changes for real-time updates
-    const subscriptionId = this.connection.onAccountChange(
-      publicKey,
-      () => {
-        // Debounce updates
-        setTimeout(updateBalances, 1000);
-      },
-      'confirmed'
-    );
-
-    // Return cleanup function
     return () => {
-      isSubscribed = false;
-      clearInterval(interval);
-      this.connection.removeAccountChangeListener(subscriptionId);
+      // No cleanup needed
     };
   }
 }
