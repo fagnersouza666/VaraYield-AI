@@ -1,4 +1,8 @@
 import React, { Suspense, lazy } from 'react';
+import { QueryProvider } from './contexts/QueryProvider';
+import { ServiceProvider } from './services/service-provider';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { LoadingSpinner } from './components/ui/LoadingSpinner';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import { useAppStore } from './store/useAppStore';
@@ -11,14 +15,8 @@ const Analytics = lazy(() => import('./components/Analytics'));
 const RiskManagement = lazy(() => import('./components/RiskManagement'));
 const Settings = lazy(() => import('./components/Settings'));
 
-function App() {
+const AppContent: React.FC = () => {
   const { currentPage } = useAppStore();
-
-  const LoadingSpinner = () => (
-    <div className="flex items-center justify-center min-h-[400px]">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
-    </div>
-  );
 
   const renderPageComponent = () => {
     switch (currentPage) {
@@ -38,21 +36,44 @@ function App() {
   };
 
   const renderCurrentPage = () => (
-    <Suspense fallback={<LoadingSpinner />}>
-      {renderPageComponent()}
+    <Suspense fallback={<LoadingSpinner size="lg" text="Loading..." />}>
+      <ErrorBoundary>
+        {renderPageComponent()}
+      </ErrorBoundary>
     </Suspense>
   );
 
   return (
     <div className="min-h-screen bg-gray-900">
-      <Header />
+      <ErrorBoundary>
+        <Header />
+      </ErrorBoundary>
       <div className="flex">
-        <Sidebar />
+        <ErrorBoundary>
+          <Sidebar />
+        </ErrorBoundary>
         <main className="flex-1 p-8">
           {renderCurrentPage()}
         </main>
       </div>
     </div>
+  );
+};
+
+function App() {
+  return (
+    <ErrorBoundary
+      onError={(error, errorInfo) => {
+        // Log to external service in production
+        console.error('App-level error:', error, errorInfo);
+      }}
+    >
+      <QueryProvider>
+        <ServiceProvider>
+          <AppContent />
+        </ServiceProvider>
+      </QueryProvider>
+    </ErrorBoundary>
   );
 }
 

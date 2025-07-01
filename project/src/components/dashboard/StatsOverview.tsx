@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { TrendingUp, ArrowUpRight } from 'lucide-react';
 import type { PortfolioData } from '../../types';
 
@@ -6,7 +6,27 @@ interface StatsOverviewProps {
   readonly portfolioData: PortfolioData;
 }
 
-const StatsOverview: React.FC<StatsOverviewProps> = ({ portfolioData }) => {
+const StatsOverview: React.FC<StatsOverviewProps> = React.memo(({ portfolioData }) => {
+  const formattedTVL = useMemo(() => 
+    portfolioData.totalValueLocked.toLocaleString(), 
+    [portfolioData.totalValueLocked]
+  );
+
+  const formattedAPY = useMemo(() => 
+    portfolioData.currentAPY.toFixed(2), 
+    [portfolioData.currentAPY]
+  );
+
+  const formattedWeeklyChange = useMemo(() => 
+    portfolioData.weeklyChange.toFixed(1), 
+    [portfolioData.weeklyChange]
+  );
+
+  const isPositiveChange = useMemo(() => 
+    portfolioData.weeklyChange >= 0, 
+    [portfolioData.weeklyChange]
+  );
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
       {/* Total Value Locked */}
@@ -16,11 +36,11 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({ portfolioData }) => {
           <TrendingUp className="h-5 w-5 text-white/90" />
         </div>
         <p className="mt-3 text-3xl font-bold text-white">
-          ${portfolioData.totalValueLocked.toLocaleString()}
+          ${formattedTVL}
         </p>
         <p className="mt-2 text-sm text-white/90 flex items-center">
-          <ArrowUpRight className="h-4 w-4 mr-1" />
-          +{portfolioData.weeklyChange.toFixed(1)}% from last week
+          <ArrowUpRight className={`h-4 w-4 mr-1 ${isPositiveChange ? '' : 'rotate-180'}`} />
+          {isPositiveChange ? '+' : ''}{formattedWeeklyChange}% from last week
         </p>
       </div>
 
@@ -33,7 +53,7 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({ portfolioData }) => {
           </div>
         </div>
         <p className="mt-3 text-3xl font-bold text-white">
-          {portfolioData.currentAPY.toFixed(2)}%
+          {formattedAPY}%
         </p>
         <p className="mt-2 text-sm text-green-400">Optimized returns</p>
       </div>
@@ -49,6 +69,8 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({ portfolioData }) => {
       </div>
     </div>
   );
-};
+});
+
+StatsOverview.displayName = 'StatsOverview';
 
 export default StatsOverview;
