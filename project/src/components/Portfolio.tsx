@@ -92,6 +92,57 @@ const Portfolio: React.FC = React.memo(() => {
     );
   }
 
+  // Show empty state if no positions
+  if (portfolio.positions.length === 0 && portfolio.summary.totalValue === 0) {
+    return (
+      <div className="space-y-8">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-white">My Wallet Portfolio</h1>
+            <p className="text-gray-400 mt-1">
+              {walletAddress ? `${walletAddress.slice(0, 8)}...${walletAddress.slice(-8)}` : 'Loading wallet...'}
+            </p>
+          </div>
+          
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={handleRefresh}
+              className="flex items-center px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+              disabled={isLoading}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
+            
+            <WalletMultiButton className="!bg-blue-600 hover:!bg-blue-700 !h-10" />
+          </div>
+        </div>
+
+        {/* Empty State */}
+        <div className="text-center py-12">
+          <Wallet className="h-16 w-16 text-gray-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-white mb-2">No Assets Found</h2>
+          <p className="text-gray-400 mb-6 max-w-md mx-auto">
+            Your wallet appears to be empty or contains only very small amounts. 
+            Add some SOL or tokens to see your portfolio.
+          </p>
+          <div className="space-y-2">
+            <p className="text-sm text-gray-500">
+              • Purchase SOL from an exchange and transfer to your wallet
+            </p>
+            <p className="text-sm text-gray-500">
+              • Use a DEX like Raydium to swap for other tokens
+            </p>
+            <p className="text-sm text-gray-500">
+              • Make sure you're connected to the correct wallet
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -148,7 +199,7 @@ const Portfolio: React.FC = React.memo(() => {
           </div>
           <div>
             <h4 className="text-sm font-medium text-gray-400 mb-2">Network</h4>
-            <p className="text-white">Solana Mainnet</p>
+            <p className="text-white">Solana {import.meta.env.VITE_VARA_NETWORK === 'devnet' ? 'Devnet' : 'Mainnet'}</p>
           </div>
         </div>
         <div className="mt-4 pt-4 border-t border-gray-700">

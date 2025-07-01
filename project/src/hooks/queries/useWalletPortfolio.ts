@@ -27,10 +27,19 @@ export const useWalletBalances = (enabled: boolean = true) => {
     staleTime: 30 * 1000, // 30 seconds
     gcTime: 2 * 60 * 1000, // 2 minutes
     retry: (failureCount, error) => {
+      // Don't retry wallet connection errors
       if (error instanceof RaydiumError && error.message.includes('not connected')) {
         return false;
       }
+      // Don't retry too many times for network errors to avoid spamming
+      if (error instanceof RaydiumError && error.message.includes('Network connection failed')) {
+        return failureCount < 2;
+      }
+      // Retry other errors up to 3 times
       return failureCount < 3;
+    },
+    onError: (error) => {
+      console.error('Wallet balances query error:', error);
     },
   });
 };
@@ -59,10 +68,19 @@ export const useWalletPortfolio = (enabled: boolean = true) => {
     staleTime: 30 * 1000, // 30 seconds
     gcTime: 2 * 60 * 1000, // 2 minutes
     retry: (failureCount, error) => {
+      // Don't retry wallet connection errors
       if (error instanceof RaydiumError && error.message.includes('not connected')) {
         return false;
       }
+      // Don't retry too many times for network errors
+      if (error instanceof RaydiumError && error.message.includes('Network connection failed')) {
+        return failureCount < 2;
+      }
+      // Retry other errors up to 3 times
       return failureCount < 3;
+    },
+    onError: (error) => {
+      console.error('Wallet portfolio query error:', error);
     },
   });
 
