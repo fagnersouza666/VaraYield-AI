@@ -1,9 +1,11 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { RaydiumService, HttpRaydiumService, MockRaydiumService } from './api/raydium.service';
+import { PortfolioService, HttpPortfolioService, MockPortfolioService } from './api/portfolio.service';
 import { FetchHttpClient } from './api/http-client';
 
 interface Services {
   raydiumService: RaydiumService;
+  portfolioService: PortfolioService;
 }
 
 const ServicesContext = createContext<Services | null>(null);
@@ -23,6 +25,7 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({
     if (useMockServices) {
       return {
         raydiumService: new MockRaydiumService(),
+        portfolioService: new MockPortfolioService(),
       };
     }
 
@@ -33,6 +36,7 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({
     
     return {
       raydiumService: new HttpRaydiumService(baseUrl, httpClient),
+      portfolioService: new HttpPortfolioService(baseUrl, httpClient),
     };
   }, [baseUrl, useMockServices]);
 
@@ -55,6 +59,11 @@ export const useServices = (): Services => {
 export const useRaydiumService = (): RaydiumService => {
   const { raydiumService } = useServices();
   return raydiumService;
+};
+
+export const usePortfolioService = (): PortfolioService => {
+  const { portfolioService } = useServices();
+  return portfolioService;
 };
 
 // Hook for accessing services in components that need multiple services

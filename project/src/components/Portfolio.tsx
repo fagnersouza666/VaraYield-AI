@@ -1,102 +1,173 @@
-import React from 'react';
-import { Wallet, TrendingUp, DollarSign, PieChart } from 'lucide-react';
-import { useRaydiumData } from '../hooks/useRaydiumData';
+import React, { useCallback, useState } from 'react';
+import { Plus, RefreshCw, Settings } from 'lucide-react';
+import { usePortfolioDashboard, useRemovePosition } from '../hooks/queries/usePortfolio';
+import { ErrorMessage } from './ui/ErrorMessage';
+import { LoadingSpinner } from './ui/LoadingSpinner';
+import { PortfolioOverview } from './portfolio/PortfolioOverview';
+import { AssetAllocation } from './portfolio/AssetAllocation';
+import { PositionsList } from './portfolio/PositionsList';
+import { Position } from '../services/types/portfolio.types';
 
-const Portfolio = () => {
-  const { portfolioData, connected } = useRaydiumData();
+const Portfolio: React.FC = React.memo(() => {
+  const [selectedPosition, setSelectedPosition] = useState<Position | null>(null);
+  const [showAddPosition, setShowAddPosition] = useState(false);
 
-  if (!connected) {
+  const {
+    portfolio,
+    isLoading,
+    portfolioError,
+    refetchAll,
+  } = usePortfolioDashboard();
+
+  const removePositionMutation = useRemovePosition();
+
+  const handleRefresh = useCallback(() => {
+    refetchAll();
+  }, [refetchAll]);
+
+  const handleEditPosition = useCallback((position: Position) => {
+    setSelectedPosition(position);
+    // TODO: Open edit position modal
+  }, []);
+
+  const handleRemovePosition = useCallback(async (positionId: string) => {
+    if (!window.confirm('Are you sure you want to remove this position?')) {
+      return;
+    }
+
+    try {
+      await removePositionMutation.mutateAsync(positionId);
+    } catch (error) {
+      console.error('Failed to remove position:', error);
+    }
+  }, [removePositionMutation]);
+
+  const handleAddPosition = useCallback(() => {
+    setShowAddPosition(true);
+    // TODO: Open add position modal
+  }, []);
+
+  if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
-        <Wallet className="h-16 w-16 text-gray-500 mb-4" />
-        <h2 className="text-xl font-semibold text-white mb-2">Connect Your Wallet</h2>
-        <p className="text-gray-400">Please connect your wallet to view your portfolio</p>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <LoadingSpinner size="lg" text="Loading portfolio..." />
+      </div>
+    );
+  }
+
+  if (portfolioError) {
+    return (
+      <div className="p-8">
+        <ErrorMessage
+          error={portfolioError}
+          title="Portfolio Error"
+          onRetry={handleRefresh}
+          showDetails={true}
+        />
+      </div>
+    );
+  }
+
+  if (!portfolio) {
+    return (
+      <div className="p-8">
+        <ErrorMessage
+          title="No Portfolio Data"
+          message="Unable to load portfolio information"
+          onRetry={handleRefresh}
+        />
       </div>
     );
   }
 
   return (
     <div className="space-y-8">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">Portfolio</h1>
-        <div className="flex items-center space-x-2">
-          <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-          <span className="text-sm text-gray-400">Live</span>
+        <div>
+          <h1 className="text-3xl font-bold text-white">Portfolio</h1>
+          <p className="text-gray-400 mt-1">
+            Track and manage your DeFi positions
+          </p>
+        </div>
+        
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={handleRefresh}
+            className="flex items-center px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+            disabled={isLoading}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+          
+          <button
+            onClick={handleAddPosition}
+            className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Position
+          </button>
+          
+          <button className="flex items-center px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors">
+            <Settings className="h-4 w-4 mr-2" />
+            Settings
+          </button>
         </div>
       </div>
 
       {/* Portfolio Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-gray-400 text-sm font-medium">Total Balance</h3>
-            <DollarSign className="h-5 w-5 text-gray-400" />
-          </div>
-          <p className="text-2xl font-bold text-white">${portfolioData.totalValueLocked.toLocaleString()}</p>
-          <p className="text-sm text-green-400">+{portfolioData.weeklyChange.toFixed(1)}% this week</p>
+      <PortfolioOverview summary={portfolio.summary} />
+
+      {/* Asset Allocation & Positions */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        {/* Asset Allocation */}
+        <div className="xl:col-span-1">
+          <AssetAllocation positions={portfolio.positions} />
         </div>
 
-        <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-gray-400 text-sm font-medium">Portfolio APY</h3>
-            <TrendingUp className="h-5 w-5 text-gray-400" />
-          </div>
-          <p className="text-2xl font-bold text-white">{portfolioData.currentAPY.toFixed(2)}%</p>
-          <p className="text-sm text-green-400">Optimized</p>
-        </div>
-
-        <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-gray-400 text-sm font-medium">Active Positions</h3>
-            <PieChart className="h-5 w-5 text-gray-400" />
-          </div>
-          <p className="text-2xl font-bold text-white">{portfolioData.protocols.length}</p>
-          <p className="text-sm text-gray-400">Protocols</p>
-        </div>
-
-        <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-gray-400 text-sm font-medium">Weekly Yield</h3>
-            <TrendingUp className="h-5 w-5 text-green-400" />
-          </div>
-          <p className="text-2xl font-bold text-white">
-            ${(portfolioData.totalValueLocked * portfolioData.currentAPY / 100 / 52).toFixed(2)}
-          </p>
-          <p className="text-sm text-gray-400">Estimated</p>
+        {/* Positions List */}
+        <div className="xl:col-span-2">
+          <PositionsList
+            positions={portfolio.positions}
+            onEditPosition={handleEditPosition}
+            onRemovePosition={handleRemovePosition}
+            isLoading={removePositionMutation.isPending}
+          />
         </div>
       </div>
 
-      {/* Holdings */}
-      <div className="bg-gray-800 rounded-2xl shadow-lg border border-gray-700">
-        <div className="p-6">
-          <h2 className="text-xl font-semibold text-white mb-6">Holdings</h2>
-          <div className="space-y-4">
-            {portfolioData.protocols.map((protocol, index) => (
-              <div key={index} className="flex items-center justify-between p-4 bg-gray-700/50 rounded-xl">
-                <div className="flex items-center space-x-4">
-                  <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center">
-                    <span className="text-white font-semibold">{protocol.name[0]}</span>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-white">{protocol.name}</h3>
-                    <p className="text-sm text-gray-400">Liquidity Pool</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-semibold text-white">
-                    ${(portfolioData.totalValueLocked / portfolioData.protocols.length).toFixed(2)}
-                  </p>
-                  <p className={`text-sm ${protocol.positive ? 'text-green-400' : 'text-red-400'}`}>
-                    {protocol.apy} APY
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
+      {/* Performance & Analytics Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+          <h3 className="text-lg font-semibold text-white mb-4">Recent Activity</h3>
+          <p className="text-gray-400 text-sm">
+            Transaction history and recent changes will be displayed here.
+          </p>
+          {/* TODO: Add recent transactions component */}
         </div>
+
+        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+          <h3 className="text-lg font-semibold text-white mb-4">Performance Chart</h3>
+          <p className="text-gray-400 text-sm">
+            Portfolio performance visualization will be displayed here.
+          </p>
+          {/* TODO: Add performance chart component */}
+        </div>
+      </div>
+
+      {/* Rebalance Recommendations */}
+      <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+        <h3 className="text-lg font-semibold text-white mb-4">Rebalance Recommendations</h3>
+        <p className="text-gray-400 text-sm">
+          AI-powered portfolio optimization suggestions will be displayed here.
+        </p>
+        {/* TODO: Add rebalance recommendations component */}
       </div>
     </div>
   );
-};
+});
+
+Portfolio.displayName = 'Portfolio';
 
 export default Portfolio;
