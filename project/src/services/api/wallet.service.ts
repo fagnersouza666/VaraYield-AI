@@ -16,7 +16,7 @@ export class SolanaWalletService implements WalletService {
     private httpClient?: HttpClient
   ) {}
 
-  private async retryOperation<T>(operation: () => Promise<T>, maxRetries: number = 3, delay: number = 1000): Promise<T> {
+  private async retryOperation<T>(operation: () => Promise<T>, maxRetries: number = 3, delay: number = 2000): Promise<T> {
     let lastError: Error;
     
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -25,12 +25,28 @@ export class SolanaWalletService implements WalletService {
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
         
-        if (attempt === maxRetries) {
-          throw lastError;
+        // Check if it's a rate limit error (403)
+        const errorMessage = lastError.message.toLowerCase();
+        if (errorMessage.includes('403') || errorMessage.includes('forbidden') || errorMessage.includes('rate limit')) {
+          console.warn(`⚠️ Rate limit hit (attempt ${attempt}/${maxRetries}). Waiting ${delay * attempt}ms...`);
+          
+          if (attempt === maxRetries) {
+            throw new RaydiumError('Rate limit exceeded. Please try again later or use a different RPC endpoint.', {
+              originalError: lastError,
+              endpoint: this.connection?.rpcEndpoint
+            });
+          }
+          
+          // Exponential backoff for rate limits
+          await new Promise(resolve => setTimeout(resolve, delay * attempt * 2));
+        } else {
+          if (attempt === maxRetries) {
+            throw lastError;
+          }
+          
+          // Normal retry delay
+          await new Promise(resolve => setTimeout(resolve, delay * attempt));
         }
-        
-        // Wait before retrying
-        await new Promise(resolve => setTimeout(resolve, delay * attempt));
       }
     }
     

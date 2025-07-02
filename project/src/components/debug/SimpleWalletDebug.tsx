@@ -1,10 +1,11 @@
 import React from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { Bug } from 'lucide-react';
 
 const SimpleWalletDebug: React.FC = () => {
   const { publicKey, connected } = useWallet();
+  const { connection } = useConnection();
 
   return (
     <div className="p-6 bg-gray-800 rounded-xl border border-gray-700">
@@ -21,6 +22,9 @@ const SimpleWalletDebug: React.FC = () => {
           <h3 className="font-medium text-white mb-2">Connection Status</h3>
           <p className="text-gray-300">
             Connected: {connected ? '✅ Yes' : '❌ No'}
+          </p>
+          <p className="text-gray-300">
+            RPC Endpoint: {connection.rpcEndpoint}
           </p>
           {publicKey && (
             <p className="text-gray-300 mt-2">
