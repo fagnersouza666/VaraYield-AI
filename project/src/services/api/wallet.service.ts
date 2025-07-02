@@ -12,10 +12,12 @@ import { RaydiumError, handleApiError } from '../../utils/errors';
 import { RPCFallbackService } from '../rpc-fallback.service';
 import { MockWalletService } from '../mock-wallet.service';
 
+export type WalletMode = 'real' | 'error' | 'demo';
+
 export class SolanaWalletService implements WalletService {
   private rpcFallback: RPCFallbackService;
   private mockService: MockWalletService;
-  private useMockFallback: boolean = false;
+  private walletMode: WalletMode = 'error'; // Default: show errors instead of mock data
 
   constructor(
     private connection: Connection,
@@ -66,10 +68,11 @@ export class SolanaWalletService implements WalletService {
 
   async getWalletBalances(publicKey: PublicKey): Promise<WalletBalance> {
     console.log('🔍 Fetching wallet balances for:', publicKey.toString());
+    console.log('🔧 Wallet mode:', this.walletMode);
     
-    // If mock fallback is enabled, use mock service directly
-    if (this.useMockFallback) {
-      console.log('🎭 Using mock wallet service (RPC endpoints unavailable)');
+    // If demo mode is enabled, use mock service directly
+    if (this.walletMode === 'demo') {
+      console.log('🎭 Using mock wallet service (demo mode enabled)');
       return this.mockService.getWalletBalances(publicKey);
     }
     
@@ -84,11 +87,22 @@ export class SolanaWalletService implements WalletService {
         solBalanceFormatted = solBalance / 1e9; // Convert lamports to SOL
         console.log('💰 SOL balance:', solBalanceFormatted, 'SOL');
       } catch (solError) {
-        console.warn('⚠️ Failed to fetch SOL balance with all endpoints:', solError);
-        // Enable mock fallback for future requests
-        this.useMockFallback = true;
-        console.log('🎭 Switching to mock wallet service for demonstration');
-        return this.mockService.getWalletBalances(publicKey);
+        console.error('❌ Failed to fetch SOL balance with all endpoints:', solError);
+        
+        // Handle based on wallet mode
+        if (this.walletMode === 'demo') {
+          console.log('🎭 Switching to mock wallet service for demonstration');
+          return this.mockService.getWalletBalances(publicKey);
+        } else {
+          // Error mode: throw the actual error instead of falling back to mock
+          throw new RaydiumError(
+            'Não foi possível conectar aos servidores da Solana. Todos os endpoints RPC estão indisponíveis ou com limite de taxa.', 
+            {
+              originalError: solError,
+              suggestion: 'Tente novamente mais tarde ou use um provedor RPC pago (Helius, QuickNode, Alchemy)'
+            }
+          );
+        }
       }
 
       // Get token accounts using fallback service
@@ -103,11 +117,22 @@ export class SolanaWalletService implements WalletService {
         );
         console.log('📊 Found', tokenAccounts.value.length, 'SPL token accounts');
       } catch (tokenError) {
-        console.warn('⚠️ Failed to fetch SPL token accounts with all endpoints:', tokenError);
-        // Switch to mock service if token fetching fails
-        this.useMockFallback = true;
-        console.log('🎭 Switching to mock wallet service for demonstration');
-        return this.mockService.getWalletBalances(publicKey);
+        console.error('❌ Failed to fetch SPL token accounts with all endpoints:', tokenError);
+        
+        // Handle based on wallet mode
+        if (this.walletMode === 'demo') {
+          console.log('🎭 Switching to mock wallet service for demonstration');
+          return this.mockService.getWalletBalances(publicKey);
+        } else {
+          // Error mode: throw the actual error
+          throw new RaydiumError(
+            'Não foi possível buscar as contas de tokens SPL. Servidores RPC indisponíveis.', 
+            {
+              originalError: tokenError,
+              suggestion: 'Verifique sua conexão ou tente um provedor RPC diferente'
+            }
+          );
+        }
       }
 
       // Also check for Token-2022 program accounts
@@ -379,7 +404,7 @@ export class SolanaWalletService implements WalletService {
   }
 
   subscribeToBalanceUpdates(publicKey: PublicKey, callback: (balance: WalletBalance) => void): () => void {
-    if (this.useMockFallback) {
+    if (this.walletMode === 'demo') {
       return this.mockService.subscribeToBalanceUpdates(publicKey, callback);
     }
 
@@ -393,18 +418,38 @@ export class SolanaWalletService implements WalletService {
   }
 
   // Utility methods for debugging and control
+  setWalletMode(mode: WalletMode): void {
+    this.walletMode = mode;
+    console.log(`🔧 Wallet mode changed to: ${mode}`);
+    
+    switch (mode) {
+      case 'real':
+        console.log('📡 Will attempt to use real RPC endpoints');
+        break;
+      case 'error':
+        console.log('❌ Will show errors when RPC fails (no mock fallback)');
+        break;
+      case 'demo':
+        console.log('🎭 Will use demonstration data when RPC fails');
+        break;
+    }
+  }
+
+  getWalletMode(): WalletMode {
+    return this.walletMode;
+  }
+
+  // Legacy methods for backward compatibility
   enableMockFallback(): void {
-    this.useMockFallback = true;
-    console.log('🎭 Mock wallet service enabled');
+    this.setWalletMode('demo');
   }
 
   disableMockFallback(): void {
-    this.useMockFallback = false;
-    console.log('📡 Real RPC service enabled');
+    this.setWalletMode('error');
   }
 
   isMockMode(): boolean {
-    return this.useMockFallback;
+    return this.walletMode === 'demo';
   }
 
   getMockService(): MockWalletService {
