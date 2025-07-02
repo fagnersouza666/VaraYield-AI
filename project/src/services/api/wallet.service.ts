@@ -25,19 +25,21 @@ export class SolanaWalletService implements WalletService {
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
         
-        // Check if it's a rate limit error (403)
+        // Check if it's a rate limit (403) or auth error (401)
         const errorMessage = lastError.message.toLowerCase();
-        if (errorMessage.includes('403') || errorMessage.includes('forbidden') || errorMessage.includes('rate limit')) {
-          console.warn(`⚠️ Rate limit hit (attempt ${attempt}/${maxRetries}). Waiting ${delay * attempt}ms...`);
+        if (errorMessage.includes('403') || errorMessage.includes('forbidden') || 
+            errorMessage.includes('rate limit') || errorMessage.includes('401') || 
+            errorMessage.includes('unauthorized')) {
+          console.warn(`⚠️ RPC error (${errorMessage}) (attempt ${attempt}/${maxRetries}). Waiting ${delay * attempt}ms...`);
           
           if (attempt === maxRetries) {
-            throw new RaydiumError('Rate limit exceeded. Please try again later or use a different RPC endpoint.', {
+            throw new RaydiumError('RPC endpoint error. The endpoint may require authentication or be rate limited. Please try again later.', {
               originalError: lastError,
               endpoint: this.connection?.rpcEndpoint
             });
           }
           
-          // Exponential backoff for rate limits
+          // Exponential backoff for RPC errors
           await new Promise(resolve => setTimeout(resolve, delay * attempt * 2));
         } else {
           if (attempt === maxRetries) {

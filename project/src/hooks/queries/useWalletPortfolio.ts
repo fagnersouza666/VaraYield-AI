@@ -24,20 +24,24 @@ export const useWalletBalances = (enabled: boolean = true) => {
       return walletService.getWalletBalances(publicKey);
     },
     enabled: enabled && connected && !!publicKey,
-    staleTime: 30 * 1000, // 30 seconds
-    gcTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 60 * 1000, // 1 minute
+    gcTime: 5 * 60 * 1000, // 5 minutes
     retry: (failureCount, error) => {
       // Don't retry wallet connection errors
       if (error instanceof RaydiumError && error.message.includes('not connected')) {
         return false;
       }
-      // Don't retry too many times for network errors to avoid spamming
-      if (error instanceof RaydiumError && error.message.includes('Network connection failed')) {
-        return failureCount < 2;
+      // Don't retry RPC endpoint errors too aggressively
+      if (error instanceof RaydiumError && 
+          (error.message.includes('RPC endpoint error') || 
+           error.message.includes('Rate limit') ||
+           error.message.includes('Network connection failed'))) {
+        return failureCount < 1; // Only retry once for RPC errors
       }
-      // Retry other errors up to 3 times
-      return failureCount < 3;
+      // Retry other errors up to 2 times
+      return failureCount < 2;
     },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000), // Exponential backoff
     onError: (error) => {
       console.error('Wallet balances query error:', error);
     },
@@ -65,20 +69,24 @@ export const useWalletPortfolio = (enabled: boolean = true) => {
     queryKey: [...PORTFOLIO_QUERY_KEYS.summary(), 'wallet', publicKey?.toString()],
     queryFn: () => portfolioService.getPortfolio(),
     enabled: enabled && connected && !!publicKey,
-    staleTime: 30 * 1000, // 30 seconds
-    gcTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 60 * 1000, // 1 minute
+    gcTime: 5 * 60 * 1000, // 5 minutes
     retry: (failureCount, error) => {
       // Don't retry wallet connection errors
       if (error instanceof RaydiumError && error.message.includes('not connected')) {
         return false;
       }
-      // Don't retry too many times for network errors
-      if (error instanceof RaydiumError && error.message.includes('Network connection failed')) {
-        return failureCount < 2;
+      // Don't retry RPC endpoint errors too aggressively
+      if (error instanceof RaydiumError && 
+          (error.message.includes('RPC endpoint error') || 
+           error.message.includes('Rate limit') ||
+           error.message.includes('Network connection failed'))) {
+        return failureCount < 1; // Only retry once for RPC errors
       }
-      // Retry other errors up to 3 times
-      return failureCount < 3;
+      // Retry other errors up to 2 times
+      return failureCount < 2;
     },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000), // Exponential backoff
     onError: (error) => {
       console.error('Wallet portfolio query error:', error);
     },

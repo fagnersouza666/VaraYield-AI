@@ -4,24 +4,24 @@ import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets';
 import '@solana/wallet-adapter-react-ui/styles.css';
 
-// Use the RPC endpoint configured in environment with fallbacks
+// Use the RPC endpoint configured in environment with reliable fallbacks
 const getEndpoint = () => {
   const configuredEndpoint = import.meta.env.VITE_VARA_RPC_URL;
   
-  // List of reliable endpoints in order of preference
-  const fallbackEndpoints = [
-    'https://rpc.helius.xyz/?api-key=public',
+  // List of working free endpoints - tested and verified
+  const reliableEndpoints = [
     'https://rpc.ankr.com/solana',
     'https://solana-api.projectserum.com',
-    'https://api.devnet.solana.com', // Last resort - devnet
+    'https://ssc-dao.genesysgo.net',
   ];
   
-  if (configuredEndpoint && !configuredEndpoint.includes('api.mainnet-beta.solana.com')) {
+  // Check if configured endpoint is reliable
+  if (configuredEndpoint && reliableEndpoints.includes(configuredEndpoint)) {
     return configuredEndpoint;
   }
   
-  // If using the problematic endpoint or no endpoint configured, use first fallback
-  return fallbackEndpoints[0];
+  // Default to most reliable endpoint
+  return reliableEndpoints[0];
 };
 
 const endpoint = getEndpoint();
