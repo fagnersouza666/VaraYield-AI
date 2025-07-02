@@ -50,6 +50,7 @@ export const PAGE_VIEWS = {
   ANALYTICS: 'analytics',
   RISK_MANAGEMENT: 'risk-management',
   SETTINGS: 'settings',
+  DEBUG: 'debug',
 } as const;
 
 export const ERROR_MESSAGES = {

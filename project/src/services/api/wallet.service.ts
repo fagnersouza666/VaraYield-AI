@@ -121,8 +121,8 @@ export class SolanaWalletService implements WalletService {
             owner: tokenInfo?.owner
           });
 
-          // Include ALL tokens, even with 0 balance for debugging
-          if (tokenInfo?.mint && tokenInfo?.tokenAmount) {
+          // Include tokens with actual balance (exclude 0 balance accounts)
+          if (tokenInfo?.mint && tokenInfo?.tokenAmount && (parseFloat(tokenInfo.tokenAmount.amount || '0') > 0)) {
             const mint = tokenInfo.mint;
             const knownToken = KNOWN_TOKENS[mint];
             const uiAmount = tokenInfo.tokenAmount.uiAmount || 0;
@@ -140,6 +140,8 @@ export class SolanaWalletService implements WalletService {
             console.log(`✅ Added token ${i + 1}:`, {
               symbol: tokenBalance.symbol,
               uiAmount: tokenBalance.uiAmount,
+              rawAmount: tokenBalance.balance,
+              decimals: tokenBalance.decimals,
               mint: mint.slice(0, 8) + '...'
             });
             
@@ -190,6 +192,7 @@ export class SolanaWalletService implements WalletService {
       console.log('💼 Final wallet summary:');
       console.log('  - SOL:', solBalanceFormatted, 'SOL ($' + solValue.toFixed(2) + ')');
       console.log('  - Tokens:', tokenBalancesWithValues.length);
+      console.log('  - Token details:', tokenBalancesWithValues.map(t => `${t.symbol}: ${t.uiAmount} ($${(t.value || 0).toFixed(2)})`));
       console.log('  - Total Value: $' + totalValue.toFixed(2));
 
       return {

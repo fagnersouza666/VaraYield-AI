@@ -15,6 +15,7 @@ const Portfolio = lazy(() => import('./components/Portfolio'));
 const Analytics = lazy(() => import('./components/Analytics'));
 const RiskManagement = lazy(() => import('./components/RiskManagement'));
 const Settings = lazy(() => import('./components/Settings'));
+const WalletDebug = lazy(() => import('./components/debug/WalletDebug'));
 
 const AppContent: React.FC = () => {
   const { currentPage } = useAppStore();
@@ -31,6 +32,8 @@ const AppContent: React.FC = () => {
         return <RiskManagement />;
       case PAGE_VIEWS.SETTINGS:
         return <Settings />;
+      case PAGE_VIEWS.DEBUG:
+        return <WalletDebug />;
       default:
         return <Dashboard />;
     }

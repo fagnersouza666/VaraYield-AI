@@ -86,24 +86,18 @@ export class WalletPortfolioService implements PortfolioService {
 
       return { summary, positions: finalPositions };
     } catch (error) {
-      console.error('Failed to get wallet portfolio:', error);
+      console.error('❌ CRITICAL: Failed to get wallet portfolio:', error);
+      console.error('Error details:', {
+        name: error instanceof Error ? error.name : 'Unknown',
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      });
       
-      // Return empty portfolio on error instead of throwing
-      const emptySummary: PortfolioSummary = {
-        totalValue: 0,
-        totalPnl: 0,
-        totalPnlPercentage: 0,
-        dailyChange: 0,
-        dailyChangePercentage: 0,
-        weeklyChange: 0,
-        weeklyChangePercentage: 0,
-        monthlyChange: 0,
-        monthlyChangePercentage: 0,
-        totalPositions: 0,
-        lastUpdated: new Date().toISOString(),
-      };
-
-      return { summary: emptySummary, positions: [] };
+      // For debugging, let's throw the error instead of silently returning empty
+      throw new RaydiumError(`Portfolio fetch failed: ${error instanceof Error ? error.message : String(error)}`, { 
+        publicKey: this.publicKey?.toString(),
+        originalError: error 
+      });
     }
   }
 
@@ -116,9 +110,9 @@ export class WalletPortfolioService implements PortfolioService {
 
       for (const tokenBalance of tokenBalances) {
         try {
-          // Include all tokens, even very small amounts (LP tokens can have tiny values but be worth something)
-          if (tokenBalance.uiAmount >= 0) {
-            console.log(`🔄 Processing token: ${tokenBalance.symbol} (${tokenBalance.uiAmount})`);
+          // Include all tokens with any balance (LP tokens can have tiny values but be worth something)
+          if (tokenBalance.uiAmount > 0 || tokenBalance.balance > 0) {
+            console.log(`🔄 Processing token: ${tokenBalance.symbol} - Balance: ${tokenBalance.uiAmount} - Raw: ${tokenBalance.balance}`);
             
             const asset: Asset = {
               id: tokenBalance.mint.toLowerCase(),
