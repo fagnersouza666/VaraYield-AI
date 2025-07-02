@@ -93,11 +93,22 @@ export class WalletPortfolioService implements PortfolioService {
         stack: error instanceof Error ? error.stack : undefined
       });
       
-      // For debugging, let's throw the error instead of silently returning empty
-      throw new RaydiumError(`Portfolio fetch failed: ${error instanceof Error ? error.message : String(error)}`, { 
-        publicKey: this.publicKey?.toString(),
-        originalError: error 
-      });
+      // Return empty portfolio on error to prevent infinite loading
+      const emptySummary: PortfolioSummary = {
+        totalValue: 0,
+        totalPnl: 0,
+        totalPnlPercentage: 0,
+        dailyChange: 0,
+        dailyChangePercentage: 0,
+        weeklyChange: 0,
+        weeklyChangePercentage: 0,
+        monthlyChange: 0,
+        monthlyChangePercentage: 0,
+        totalPositions: 0,
+        lastUpdated: new Date().toISOString(),
+      };
+
+      return { summary: emptySummary, positions: [] };
     }
   }
 
