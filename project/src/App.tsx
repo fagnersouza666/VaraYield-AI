@@ -16,6 +16,7 @@ const Analytics = lazy(() => import('./components/Analytics'));
 const RiskManagement = lazy(() => import('./components/RiskManagement'));
 const Settings = lazy(() => import('./components/Settings'));
 const SimpleWalletDebug = lazy(() => import('./components/debug/SimpleWalletDebug'));
+const PoolAnalyticsDashboard = lazy(() => import('./components/pools/PoolAnalyticsDashboard'));
 
 const AppContent: React.FC = () => {
   const { currentPage } = useAppStore();
@@ -28,6 +29,8 @@ const AppContent: React.FC = () => {
         return <Portfolio />;
       case PAGE_VIEWS.ANALYTICS:
         return <Analytics />;
+      case PAGE_VIEWS.POOL_ANALYTICS:
+        return <PoolAnalyticsDashboard />;
       case PAGE_VIEWS.RISK_MANAGEMENT:
         return <RiskManagement />;
       case PAGE_VIEWS.SETTINGS:

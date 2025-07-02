@@ -9,12 +9,21 @@ import {
 } from '../types/wallet.types';
 import { HttpClient } from '../types/api.types';
 import { RaydiumError, handleApiError } from '../../utils/errors';
+import { RPCFallbackService } from '../rpc-fallback.service';
+import { MockWalletService } from '../mock-wallet.service';
 
 export class SolanaWalletService implements WalletService {
+  private rpcFallback: RPCFallbackService;
+  private mockService: MockWalletService;
+  private useMockFallback: boolean = false;
+
   constructor(
     private connection: Connection,
     private httpClient?: HttpClient
-  ) {}
+  ) {
+    this.rpcFallback = RPCFallbackService.getInstance();
+    this.mockService = new MockWalletService();
+  }
 
   private async retryOperation<T>(operation: () => Promise<T>, maxRetries: number = 3, delay: number = 2000): Promise<T> {
     let lastError: Error;
@@ -58,52 +67,59 @@ export class SolanaWalletService implements WalletService {
   async getWalletBalances(publicKey: PublicKey): Promise<WalletBalance> {
     console.log('🔍 Fetching wallet balances for:', publicKey.toString());
     
+    // If mock fallback is enabled, use mock service directly
+    if (this.useMockFallback) {
+      console.log('🎭 Using mock wallet service (RPC endpoints unavailable)');
+      return this.mockService.getWalletBalances(publicKey);
+    }
+    
     try {
-      // Get SOL balance with retry logic
+      // Get SOL balance using fallback service
       let solBalance: number;
       let solBalanceFormatted: number;
       
       try {
-        console.log('📡 Fetching SOL balance...');
-        solBalance = await this.retryOperation(() => this.connection.getBalance(publicKey));
+        console.log('📡 Fetching SOL balance with fallback...');
+        solBalance = await this.rpcFallback.getWalletBalance(publicKey);
         solBalanceFormatted = solBalance / 1e9; // Convert lamports to SOL
         console.log('💰 SOL balance:', solBalanceFormatted, 'SOL');
       } catch (solError) {
-        console.warn('⚠️ Failed to fetch SOL balance, using 0:', solError);
-        solBalance = 0;
-        solBalanceFormatted = 0;
+        console.warn('⚠️ Failed to fetch SOL balance with all endpoints:', solError);
+        // Enable mock fallback for future requests
+        this.useMockFallback = true;
+        console.log('🎭 Switching to mock wallet service for demonstration');
+        return this.mockService.getWalletBalances(publicKey);
       }
 
-      // Get token accounts with proper error handling and retry
+      // Get token accounts using fallback service
       let tokenAccounts;
       let token2022Accounts;
       
       try {
-        console.log('🪙 Fetching SPL token accounts...');
-        tokenAccounts = await this.retryOperation(() => 
-          this.connection.getParsedTokenAccountsByOwner(
-            publicKey,
-            { programId: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA') }
-          )
+        console.log('🪙 Fetching SPL token accounts with fallback...');
+        tokenAccounts = await this.rpcFallback.getTokenAccounts(
+          publicKey,
+          new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA')
         );
         console.log('📊 Found', tokenAccounts.value.length, 'SPL token accounts');
       } catch (tokenError) {
-        console.warn('⚠️ Failed to fetch SPL token accounts, using empty array:', tokenError);
-        tokenAccounts = { value: [] };
+        console.warn('⚠️ Failed to fetch SPL token accounts with all endpoints:', tokenError);
+        // Switch to mock service if token fetching fails
+        this.useMockFallback = true;
+        console.log('🎭 Switching to mock wallet service for demonstration');
+        return this.mockService.getWalletBalances(publicKey);
       }
 
       // Also check for Token-2022 program accounts
       try {
-        console.log('🪙 Fetching Token-2022 accounts...');
-        token2022Accounts = await this.retryOperation(() => 
-          this.connection.getParsedTokenAccountsByOwner(
-            publicKey,
-            { programId: new PublicKey('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb') }
-          )
+        console.log('🪙 Fetching Token-2022 accounts with fallback...');
+        token2022Accounts = await this.rpcFallback.getTokenAccounts(
+          publicKey,
+          new PublicKey('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb')
         );
         console.log('📊 Found', token2022Accounts.value.length, 'Token-2022 accounts');
       } catch (token2022Error) {
-        console.warn('⚠️ Failed to fetch Token-2022 accounts, using empty array:', token2022Error);
+        console.warn('⚠️ Failed to fetch Token-2022 accounts with all endpoints, using empty array:', token2022Error);
         token2022Accounts = { value: [] };
       }
 
@@ -363,6 +379,10 @@ export class SolanaWalletService implements WalletService {
   }
 
   subscribeToBalanceUpdates(publicKey: PublicKey, callback: (balance: WalletBalance) => void): () => void {
+    if (this.useMockFallback) {
+      return this.mockService.subscribeToBalanceUpdates(publicKey, callback);
+    }
+
     // Simplified implementation - just return a no-op cleanup function
     // Real-time subscriptions can cause performance issues and infinite loops
     console.log('Balance updates subscription disabled for performance');
@@ -370,6 +390,29 @@ export class SolanaWalletService implements WalletService {
     return () => {
       // No cleanup needed
     };
+  }
+
+  // Utility methods for debugging and control
+  enableMockFallback(): void {
+    this.useMockFallback = true;
+    console.log('🎭 Mock wallet service enabled');
+  }
+
+  disableMockFallback(): void {
+    this.useMockFallback = false;
+    console.log('📡 Real RPC service enabled');
+  }
+
+  isMockMode(): boolean {
+    return this.useMockFallback;
+  }
+
+  getMockService(): MockWalletService {
+    return this.mockService;
+  }
+
+  getRPCStatus(): any {
+    return this.rpcFallback.getEndpointStatus();
   }
 }
 

@@ -48,6 +48,7 @@ export const PAGE_VIEWS = {
   DASHBOARD: 'dashboard',
   PORTFOLIO: 'portfolio',
   ANALYTICS: 'analytics',
+  POOL_ANALYTICS: 'pool-analytics',
   RISK_MANAGEMENT: 'risk-management',
   SETTINGS: 'settings',
   DEBUG: 'debug',

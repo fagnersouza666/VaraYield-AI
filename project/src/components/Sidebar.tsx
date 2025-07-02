@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart3, Wallet, Settings2, TrendingUp, Shield, Bug } from 'lucide-react';
+import { BarChart3, Wallet, Settings2, TrendingUp, Shield, Bug, Activity } from 'lucide-react';
 import { useAppStore, PageView } from '../store/useAppStore';
 
 const Sidebar = () => {
@@ -9,6 +9,7 @@ const Sidebar = () => {
     { icon: BarChart3, label: 'Dashboard', page: 'dashboard' },
     { icon: Wallet, label: 'Portfolio', page: 'portfolio' },
     { icon: TrendingUp, label: 'Analytics', page: 'analytics' },
+    { icon: Activity, label: 'Pool Analytics', page: 'pool-analytics' },
     { icon: Shield, label: 'Risk Management', page: 'risk-management' },
     { icon: Settings2, label: 'Settings', page: 'settings' },
   ];
