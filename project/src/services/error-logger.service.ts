@@ -70,6 +70,45 @@ export class ErrorLoggerService {
 
     // JavaScript errors
     window.addEventListener('error', (event) => {
+      // Check if it's a Raydium account data error
+      const isAccountDataError = event.message && 
+        event.message.includes('invalid account data; account type mismatch');
+      
+      if (isAccountDataError) {
+        // Extract the account type numbers from the error message
+        const match = event.message.match(/account type mismatch (\d+) != (\d+)/);
+        const actualType = match ? parseInt(match[1]) : null;
+        const expectedType = match ? parseInt(match[2]) : null;
+        
+        this.logError({
+          category: 'PARSING_ERROR',
+          message: 'Raydium account data mismatch (global error handler)',
+          details: {
+            originalMessage: event.message,
+            filename: event.filename,
+            lineno: event.lineno,
+            colno: event.colno,
+            actualType,
+            expectedType,
+            actualTypeHex: actualType ? '0x' + actualType.toString(16) : null,
+            expectedTypeHex: expectedType ? '0x' + expectedType.toString(16) : null,
+            stackTrace: event.error?.stack
+          },
+          stack: event.error?.stack,
+          context: {
+            url: window.location.href,
+            userAgent: navigator.userAgent,
+            component: 'GlobalErrorHandler',
+            interceptedAt: 'windowErrorEvent'
+          }
+        });
+        
+        // Prevent the error from showing in console
+        event.preventDefault();
+        return false;
+      }
+      
+      // Handle other errors normally
       this.logError({
         category: 'UNKNOWN_ERROR',
         message: event.message,

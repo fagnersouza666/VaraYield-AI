@@ -14,6 +14,7 @@ import { resolveWalletProviderConflicts } from './utils/wallet-provider-fix';
 import { errorLogger } from './services/error-logger.service';
 import { interceptLocalhostRequests } from './services/api/mock-api-server';
 import { testBufferPolyfill } from './utils/buffer-test';
+import { testRaydiumPatches } from './utils/test-raydium-patches';
 import { handleRaydiumError, solanaErrorHandler } from './utils/solana-error-handler';
 import { safeRaydiumService } from './services/safe-raydium.service';
 import { raydiumSDKPatch } from './utils/raydium-sdk-patch';
@@ -129,6 +130,7 @@ function App() {
       };
       (window as any).resolveWalletConflicts = resolveWalletProviderConflicts;
       (window as any).testBufferPolyfill = testBufferPolyfill;
+      (window as any).testRaydiumPatches = testRaydiumPatches;
       (window as any).solanaErrorHandler = solanaErrorHandler;
       (window as any).safeRaydiumService = safeRaydiumService;
       (window as any).raydiumSDKPatch = raydiumSDKPatch;
