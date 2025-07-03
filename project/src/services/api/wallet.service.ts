@@ -17,7 +17,7 @@ export type WalletMode = 'real' | 'error' | 'demo';
 export class SolanaWalletService implements WalletService {
   private rpcFallback: RPCFallbackService;
   private mockService: MockWalletService;
-  private walletMode: WalletMode = 'error'; // Default: show errors instead of mock data
+  private walletMode: WalletMode = 'real'; // Default: try real data, show appropriate errors
 
   constructor(
     private connection: Connection,

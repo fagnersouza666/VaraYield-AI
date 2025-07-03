@@ -143,99 +143,24 @@ export class HttpRaydiumService implements RaydiumService {
 
 // Mock implementation for development/testing
 export class MockRaydiumService implements RaydiumService {
-  private mockPools: RaydiumPoolData[] = [
-    {
-      id: 'pool-1',
-      name: 'SOL-USDC',
-      apy: 12.5,
-      tvl: 1250000,
-      volume24h: 850000,
-      tokenA: { symbol: 'SOL', mint: 'So11111111111111111111111111111111111111112', decimals: 9 },
-      tokenB: { symbol: 'USDC', mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', decimals: 6 },
-      lpMint: 'lp-mint-1',
-      status: 'active',
-      createdAt: '2023-01-01T00:00:00Z',
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: 'pool-2',
-      name: 'RAY-SOL',
-      apy: 9.8,
-      tvl: 980000,
-      volume24h: 650000,
-      tokenA: { symbol: 'RAY', mint: '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R', decimals: 6 },
-      tokenB: { symbol: 'SOL', mint: 'So11111111111111111111111111111111111111112', decimals: 9 },
-      lpMint: 'lp-mint-2',
-      status: 'active',
-      createdAt: '2023-01-01T00:00:00Z',
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: 'pool-3',
-      name: 'mSOL-SOL',
-      apy: 6.8,
-      tvl: 2100000,
-      volume24h: 450000,
-      tokenA: { symbol: 'mSOL', mint: 'mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So', decimals: 9 },
-      tokenB: { symbol: 'SOL', mint: 'So11111111111111111111111111111111111111112', decimals: 9 },
-      lpMint: 'lp-mint-3',
-      status: 'active',
-      createdAt: '2023-01-01T00:00:00Z',
-      updatedAt: new Date().toISOString(),
-    },
-  ];
-
   async getPoolData(poolIds?: string[]): Promise<RaydiumPoolData[]> {
-    await this.delay(500); // Simulate network delay
-    
-    if (poolIds?.length) {
-      return this.mockPools.filter(pool => poolIds.includes(pool.id));
-    }
-    
-    return this.mockPools;
+    // Não retorna dados mockados - aguarda conexão real
+    throw new RaydiumError('Pool data not available - waiting for real API connection', { code: 'NO_DATA' });
   }
 
   async getTopPools(limit: number = 10): Promise<RaydiumPoolData[]> {
-    await this.delay(300);
-    
-    return this.mockPools
-      .sort((a, b) => b.apy - a.apy)
-      .slice(0, limit);
+    // Não retorna dados mockados - aguarda conexão real
+    throw new RaydiumError('Top pools data not available - waiting for real API connection', { code: 'NO_DATA' });
   }
 
   async getPoolById(poolId: string): Promise<RaydiumPoolData> {
-    await this.delay(200);
-    
-    const pool = this.mockPools.find(p => p.id === poolId);
-    if (!pool) {
-      throw new RaydiumError(`Pool with ID ${poolId} not found`);
-    }
-    
-    return pool;
+    // Não retorna dados mockados - aguarda conexão real
+    throw new RaydiumError('Pool data not available - waiting for real API connection', { code: 'NO_DATA' });
   }
 
   async optimizePortfolio(request: PortfolioOptimizationRequest): Promise<PortfolioOptimizationResult> {
-    await this.delay(2000); // Simulate optimization time
-    
-    const positions: PortfolioPosition[] = this.mockPools.map((pool, index) => ({
-      poolId: pool.id,
-      allocation: index === 0 ? 50 : index === 1 ? 30 : 20,
-      value: 1000 * (index + 1),
-      apy: pool.apy,
-      risk: request.riskLevel,
-    }));
-
-    const expectedApy = positions.reduce((acc, pos) => acc + (pos.apy * pos.allocation / 100), 0);
-    const riskMultiplier = request.riskLevel === 'low' ? 1 : request.riskLevel === 'medium' ? 1.5 : 2;
-    
-    return {
-      positions,
-      expectedApy,
-      riskScore: expectedApy * riskMultiplier / 10,
-      rebalanceRequired: true,
-      optimizedAt: new Date().toISOString(),
-      nextRebalanceAt: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 hours
-    };
+    // Não retorna otimização mockada - aguarda conexão real
+    throw new RaydiumError('Portfolio optimization not available - waiting for real API connection', { code: 'NO_DATA' });
   }
 
   private delay(ms: number): Promise<void> {

@@ -18,8 +18,11 @@ const Header = () => {
             </div>
           </div>
           <div className="flex items-center space-x-4">
-            <div className="bg-indigo-600 px-4 py-2 rounded-xl text-white text-sm font-medium">
-              AI Powered
+            <div className="bg-yellow-500/20 border border-yellow-500/30 px-3 py-1 rounded-lg text-yellow-400 text-xs font-medium">
+              <div className="flex items-center space-x-1">
+                <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+                <span>Aguardando APIs</span>
+              </div>
             </div>
             <WalletMultiButton className="!bg-indigo-600 hover:!bg-indigo-700 text-white px-6 py-2.5 rounded-xl transition-colors shadow-lg shadow-indigo-900/20 font-medium" />
           </div>

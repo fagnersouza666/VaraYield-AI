@@ -52,6 +52,32 @@ VITE_VARA_NETWORK=devnet  # or mainnet-beta
 
 2. Configure your preferred Solana wallet (Phantom recommended)
 
+## 🔧 Solução de Problemas
+
+### Phantom Wallet fica "Connecting"
+1. **Desabilite o autoConnect**: O projeto está configurado com `autoConnect={false}` para evitar loops
+2. **Clique manualmente** no botão "Select Wallet" para conectar
+3. **Verifique se a Phantom está desbloqueada** e configurada para Mainnet
+4. **Recarregue a página** se a conexão falhar
+
+### Dashboard mostra "Aguardando Dados"
+1. **Normal**: O sistema não usa dados mockados/simulados
+2. **APIs Reais**: Todas as métricas aguardam conexão com APIs reais do Raydium
+3. **Desenvolvimento**: Para desenvolvimento, integre com APIs reais
+
+### Portfolio mostra erro de RPC
+1. **Provedores Gratuitos**: RPC públicos têm limites de taxa
+2. **Tente Novamente**: Aguarde alguns minutos e clique "Tentar Novamente"
+3. **RPC Pago**: Para uso intensivo, configure um RPC pago no `.env`:
+   ```
+   VITE_VARA_RPC_URL=https://seu-endpoint-pago.com
+   ```
+
+### Como configurar RPC personalizado
+1. Copie `.env.example` para `.env`
+2. Configure `VITE_VARA_RPC_URL` com seu endpoint
+3. Reinicie o projeto
+
 ## 🔒 Security
 
 - All smart contracts are thoroughly audited

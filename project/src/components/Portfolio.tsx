@@ -68,6 +68,65 @@ const Portfolio: React.FC = React.memo(() => {
   }
 
   if (error) {
+    // Se for erro de RPC/conexão, mostra interface mais amigável
+    const isRPCError = error?.message?.includes('RPC endpoint error') || 
+                      error?.message?.includes('Solana') ||
+                      error?.message?.includes('indisponíveis');
+    
+    if (isRPCError) {
+      return (
+        <div className="space-y-8">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-white">My Wallet Portfolio</h1>
+              <p className="text-gray-400 mt-1">
+                {walletAddress ? `${walletAddress.slice(0, 8)}...${walletAddress.slice(-8)}` : 'Wallet conectada'}
+              </p>
+            </div>
+            
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={handleRefresh}
+                className="flex items-center px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+                disabled={isLoading}
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                Tentar Novamente
+              </button>
+              
+              <WalletMultiButton className="!bg-blue-600 hover:!bg-blue-700 !h-10" />
+            </div>
+          </div>
+
+          {/* Connection Error State */}
+          <div className="bg-gray-800 rounded-xl p-8 text-center border border-yellow-500/20">
+            <div className="text-yellow-500 mb-4">
+              <div className="w-16 h-16 bg-yellow-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Wallet className="h-8 w-8" />
+              </div>
+            </div>
+            <h2 className="text-xl font-semibold text-white mb-2">Conectado, mas Aguardando Dados da Blockchain</h2>
+            <p className="text-gray-400 mb-6 max-w-md mx-auto">
+              Sua carteira está conectada, mas não conseguimos acessar os dados da rede Solana no momento. 
+              Isso pode ser devido a limitações dos provedores RPC gratuitos.
+            </p>
+            <div className="space-y-2 text-sm text-gray-500 mb-6">
+              <p>• Os provedores RPC públicos têm limites de taxa</p>
+              <p>• Tente novamente em alguns minutos</p>
+              <p>• Para uso intensivo, considere um provedor RPC pago</p>
+            </div>
+            <button
+              onClick={handleRefresh}
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            >
+              Tentar Conectar Novamente
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="p-8">
         <ErrorMessage
