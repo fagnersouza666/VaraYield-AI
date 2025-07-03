@@ -1,16 +1,17 @@
 import { useCallback } from 'react';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { Raydium } from '@raydium-io/raydium-sdk-v2';
-import type { RaydiumLoadParams } from '../types/raydium';
+import type { RaydiumLoadParams } from '@raydium-io/raydium-sdk-v2';
 import { logger } from '../shared/logger';
-import { 
-  RaydiumInitializationError, 
+import {
+  RaydiumInitializationError,
   WalletConnectionError,
-  createErrorFromUnknown 
+  createErrorFromUnknown
 } from '../shared/errors';
 import { ERROR_MESSAGES } from '../shared/constants';
 import { objectValidation } from '../shared/validation';
 import { safeRaydiumService } from '../services/safe-raydium.service';
+import type { Transaction, VersionedTransaction } from '@solana/web3.js';
 
 interface UseRaydiumInitializationReturn {
   initializeRaydium: () => Promise<Raydium | null>;
@@ -44,22 +45,24 @@ export const useRaydiumInitialization = (): UseRaydiumInitializationReturn => {
       logger.warn('Connection not available for Raydium initialization');
       return null;
     }
-    
+
     try {
       validateWalletConnection(publicKey, signAllTransactions);
-      
-      logger.info('Initializing Raydium SDK', { 
+
+      logger.info('Initializing Raydium SDK', {
         publicKey: publicKey?.toBase58(),
-        connection: !!connection 
+        connection: !!connection
       });
-      
+
+      // Força o tipo para compatibilidade total com Raydium SDK
+      const signAllTx = signAllTransactions as unknown as <T extends Transaction | VersionedTransaction>(txs: T[]) => Promise<T[]>;
       const raydiumInstance = await createRaydiumInstance({
         connection,
         owner: publicKey!,
-        signAllTransactions: signAllTransactions!,
+        signAllTransactions: signAllTx,
         disableLoadToken: false,
       });
-      
+
       if (raydiumInstance) {
         logger.info('Raydium SDK initialized successfully');
         return raydiumInstance;
@@ -73,9 +76,10 @@ export const useRaydiumInitialization = (): UseRaydiumInitializationReturn => {
         ERROR_MESSAGES.RAYDIUM_INIT_FAILED,
         { originalError: error.message }
       );
-      
+
       logger.error('Failed to initialize Raydium SDK', raydiumError.toJSON());
-      throw raydiumError;
+      // Nunca lança erro para cima, sempre retorna null para não quebrar a aplicação
+      return null;
     }
   }, [connection, publicKey, signAllTransactions]);
 
