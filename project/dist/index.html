@@ -5,12 +5,69 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vara Yield Optimizer</title>
-    <script type="module" crossorigin src="/assets/index-IrfT62nP.js"></script>
-    <link rel="modulepreload" crossorigin href="/assets/solana-core-C7klYK9f.js">
-    <link rel="modulepreload" crossorigin href="/assets/solana-wallet-C6spOSMR.js">
-    <link rel="modulepreload" crossorigin href="/assets/ui-libs-hl4RrwT6.js">
-    <link rel="modulepreload" crossorigin href="/assets/state-wY4W6T3q.js">
-    <link rel="stylesheet" crossorigin href="/assets/index-CxV1DIps.css">
+    
+    <!-- Node.js polyfills for browser compatibility -->
+    <script>
+      // Buffer polyfill for Solana/Raydium SDKs
+      if (typeof global === 'undefined') {
+        var global = globalThis;
+      }
+      if (typeof Buffer === 'undefined') {
+        var Buffer = {
+          from: function(data, encoding) {
+            if (typeof data === 'string') {
+              return new TextEncoder().encode(data);
+            }
+            return new Uint8Array(data);
+          },
+          alloc: function(size, fill, encoding) {
+            return new Uint8Array(size).fill(fill || 0);
+          },
+          allocUnsafe: function(size) {
+            return new Uint8Array(size);
+          },
+          isBuffer: function(obj) {
+            return obj instanceof Uint8Array;
+          },
+          concat: function(list, totalLength) {
+            if (!totalLength) {
+              totalLength = list.reduce((acc, buf) => acc + buf.length, 0);
+            }
+            const result = new Uint8Array(totalLength);
+            let offset = 0;
+            for (const buf of list) {
+              result.set(buf, offset);
+              offset += buf.length;
+            }
+            return result;
+          }
+        };
+        
+        // Make Buffer available globally
+        globalThis.Buffer = Buffer;
+        window.Buffer = Buffer;
+      }
+      
+      // Process polyfill
+      if (typeof process === 'undefined') {
+        var process = {
+          env: {},
+          version: '',
+          platform: 'browser',
+          nextTick: function(fn) {
+            setTimeout(fn, 0);
+          }
+        };
+        globalThis.process = process;
+        window.process = process;
+      }
+    </script>
+    <script type="module" crossorigin src="/assets/index-C0tDPcX5.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/solana-core-4wj1UtMT.js">
+    <link rel="modulepreload" crossorigin href="/assets/solana-wallet-BhIcckjl.js">
+    <link rel="modulepreload" crossorigin href="/assets/ui-libs-kx5-CCUI.js">
+    <link rel="modulepreload" crossorigin href="/assets/state-biirJfTv.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-CUzNsKAl.css">
   </head>
   <body>
     <div id="root"></div>

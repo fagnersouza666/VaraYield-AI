@@ -29,8 +29,8 @@ interface ServiceProviderProps {
 
 export const ServiceProvider: React.FC<ServiceProviderProps> = ({
   children,
-  baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api',
-  useMockServices = import.meta.env.DEV // Use mock services in development by default
+  baseUrl = import.meta.env.VITE_API_URL || '/api', // Use relative path instead of localhost
+  useMockServices = true // Force mock services for production stability
 }) => {
   const { connection } = useConnection();
 

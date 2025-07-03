@@ -12,6 +12,7 @@ import { RaydiumError, handleApiError } from '../../utils/errors';
 import { RPCFallbackService } from '../rpc-fallback.service';
 import { MockWalletService } from '../mock-wallet.service';
 import { PRODUCTION_CONFIG, isProductionMode } from '../../config/production';
+import { errorLogger, logRPCError, logWalletError } from '../error-logger.service';
 
 export type WalletMode = 'real' | 'error' | 'demo';
 
@@ -93,6 +94,16 @@ export class SolanaWalletService implements WalletService {
       } catch (solError) {
         console.error('❌ Failed to fetch SOL balance with all endpoints:', solError);
         
+        // Log the RPC error for monitoring
+        logRPCError(
+          this.connection?.rpcEndpoint || 'unknown',
+          solError,
+          { 
+            walletAddress: publicKey.toString(),
+            operation: 'getWalletBalance'
+          }
+        );
+        
         // Production mode: always throw real errors, never use mock data
         throw new RaydiumError(
           'Não foi possível conectar aos servidores da Solana. Todos os endpoints RPC estão indisponíveis ou com limite de taxa.', 
@@ -117,6 +128,16 @@ export class SolanaWalletService implements WalletService {
       } catch (tokenError) {
         console.error('❌ Failed to fetch SPL token accounts with all endpoints:', tokenError);
         
+        // Log the RPC error for monitoring
+        logRPCError(
+          this.connection?.rpcEndpoint || 'unknown',
+          tokenError,
+          { 
+            walletAddress: publicKey.toString(),
+            operation: 'getTokenAccounts_SPL'
+          }
+        );
+        
         // Production mode: always throw real errors for token accounts too
         throw new RaydiumError(
           'Não foi possível buscar as contas de tokens SPL. Servidores RPC indisponíveis.', 
@@ -137,6 +158,20 @@ export class SolanaWalletService implements WalletService {
         console.log('📊 Found', token2022Accounts.value.length, 'Token-2022 accounts');
       } catch (token2022Error) {
         console.warn('⚠️ Failed to fetch Token-2022 accounts with all endpoints, using empty array:', token2022Error);
+        
+        // Log the RPC warning for monitoring
+        errorLogger.logWarning({
+          category: 'RPC_ERROR',
+          message: 'Failed to fetch Token-2022 accounts, using empty array',
+          details: token2022Error,
+          context: {
+            walletAddress: publicKey.toString(),
+            rpcEndpoint: this.connection?.rpcEndpoint,
+            operation: 'getTokenAccounts_Token2022'
+          },
+          component: 'WalletService'
+        });
+        
         token2022Accounts = { value: [] };
       }
 
@@ -217,6 +252,19 @@ export class SolanaWalletService implements WalletService {
         ]);
       } catch (priceError) {
         console.warn('Failed to fetch prices, using defaults:', priceError);
+        
+        // Log price fetch warning
+        errorLogger.logWarning({
+          category: 'API_ERROR',
+          message: 'Failed to fetch token prices, using fallback values',
+          details: priceError,
+          context: {
+            walletAddress: publicKey.toString(),
+            operation: 'getTokenPrices'
+          },
+          component: 'WalletService'
+        });
+        
         prices = [
           {
             mint: 'So11111111111111111111111111111111111111112',
@@ -254,6 +302,17 @@ export class SolanaWalletService implements WalletService {
       };
     } catch (error) {
       console.error('Failed to get wallet balances:', error);
+      
+      // Log wallet error for monitoring
+      logWalletError(
+        'WalletService',
+        error,
+        {
+          walletAddress: publicKey.toString(),
+          rpcEndpoint: this.connection?.rpcEndpoint,
+          operation: 'getWalletBalances'
+        }
+      );
       
       // Provide more specific error messages
       let errorMessage = 'Failed to fetch wallet balances';
@@ -377,6 +436,18 @@ export class SolanaWalletService implements WalletService {
       });
     } catch (error) {
       console.warn('Failed to fetch real prices, using fallback:', error);
+      
+      // Log price API error
+      errorLogger.logWarning({
+        category: 'API_ERROR',
+        message: 'CoinGecko API failed, using fallback prices',
+        details: error,
+        context: {
+          operation: 'getTokenPrices',
+          mints: mints.slice(0, 5) // Log first 5 mints to avoid huge logs
+        },
+        component: 'WalletService'
+      });
       
       // Fallback to basic prices if API fails
       return mints.map(mint => {

@@ -5,6 +5,63 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vara Yield Optimizer</title>
+    
+    <!-- Node.js polyfills for browser compatibility -->
+    <script>
+      // Buffer polyfill for Solana/Raydium SDKs
+      if (typeof global === 'undefined') {
+        var global = globalThis;
+      }
+      if (typeof Buffer === 'undefined') {
+        var Buffer = {
+          from: function(data, encoding) {
+            if (typeof data === 'string') {
+              return new TextEncoder().encode(data);
+            }
+            return new Uint8Array(data);
+          },
+          alloc: function(size, fill, encoding) {
+            return new Uint8Array(size).fill(fill || 0);
+          },
+          allocUnsafe: function(size) {
+            return new Uint8Array(size);
+          },
+          isBuffer: function(obj) {
+            return obj instanceof Uint8Array;
+          },
+          concat: function(list, totalLength) {
+            if (!totalLength) {
+              totalLength = list.reduce((acc, buf) => acc + buf.length, 0);
+            }
+            const result = new Uint8Array(totalLength);
+            let offset = 0;
+            for (const buf of list) {
+              result.set(buf, offset);
+              offset += buf.length;
+            }
+            return result;
+          }
+        };
+        
+        // Make Buffer available globally
+        globalThis.Buffer = Buffer;
+        window.Buffer = Buffer;
+      }
+      
+      // Process polyfill
+      if (typeof process === 'undefined') {
+        var process = {
+          env: {},
+          version: '',
+          platform: 'browser',
+          nextTick: function(fn) {
+            setTimeout(fn, 0);
+          }
+        };
+        globalThis.process = process;
+        window.process = process;
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

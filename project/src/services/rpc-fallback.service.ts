@@ -1,5 +1,6 @@
 import { Connection, PublicKey, clusterApiUrl } from '@solana/web3.js';
 import { RaydiumError } from '../utils/errors';
+import { errorLogger, logRPCError } from './error-logger.service';
 
 export interface EndpointConfig {
   url: string;
@@ -157,6 +158,17 @@ export class RPCFallbackService {
     } catch (error) {
       console.warn(`❌ Endpoint ${endpoint.name} failed test:`, error);
       
+      // Log RPC endpoint test failure
+      logRPCError(
+        endpoint.url,
+        error,
+        {
+          endpointName: endpoint.name,
+          priority: endpoint.priority,
+          operation: 'connectionTest'
+        }
+      );
+      
       endpoint.isWorking = false;
       endpoint.lastChecked = Date.now();
       endpoint.errorCount += 1;
@@ -180,6 +192,17 @@ export class RPCFallbackService {
         
         console.warn(`⚠️ Operation failed (attempt ${attempt}/${maxRetries}):`, lastError.message);
         
+        // Log RPC operation failure
+        logRPCError(
+          this.currentConnection?.rpcEndpoint || 'unknown',
+          lastError,
+          {
+            attempt,
+            maxRetries,
+            operation: 'executeWithFallback'
+          }
+        );
+        
         // Mark current endpoint as potentially problematic
         if (this.currentConnection) {
           const currentEndpoint = this.endpoints[this.currentEndpointIndex];
@@ -189,6 +212,22 @@ export class RPCFallbackService {
           if (currentEndpoint.errorCount >= 3) {
             currentEndpoint.isWorking = false;
             console.warn(`🚫 Marking endpoint ${currentEndpoint.name} as not working due to errors`);
+            
+            // Log critical endpoint failure
+            errorLogger.logError({
+              category: 'RPC_ERROR',
+              message: `RPC endpoint marked as non-working due to repeated failures`,
+              details: {
+                endpointName: currentEndpoint.name,
+                errorCount: currentEndpoint.errorCount,
+                lastError: lastError.message
+              },
+              context: {
+                rpcEndpoint: currentEndpoint.url,
+                operation: 'endpointHealthCheck'
+              },
+              component: 'RPCFallbackService'
+            });
           }
         }
         
@@ -205,6 +244,26 @@ export class RPCFallbackService {
       }
     }
 
+    // Log critical system failure
+    errorLogger.logError({
+      category: 'RPC_ERROR',
+      message: 'All RPC operations failed - system unable to connect to Solana network',
+      details: {
+        maxRetries,
+        lastError: lastError!.message,
+        endpointStatuses: this.endpoints.map(e => ({
+          name: e.name,
+          url: e.url,
+          isWorking: e.isWorking,
+          errorCount: e.errorCount
+        }))
+      },
+      context: {
+        operation: 'executeWithFallback'
+      },
+      component: 'RPCFallbackService'
+    });
+    
     throw new RaydiumError(
       `All RPC operations failed after ${maxRetries} attempts. Last error: ${lastError!.message}`,
       { lastError, maxRetries }

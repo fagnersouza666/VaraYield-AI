@@ -5,6 +5,7 @@ import { SolanaWalletService } from '../../services/api/wallet.service';
 import { WalletPortfolioService } from '../../services/api/wallet-portfolio.service';
 import { PORTFOLIO_QUERY_KEYS } from './usePortfolio';
 import { RaydiumError } from '../../utils/errors';
+import { errorLogger } from '../../services/error-logger.service';
 
 // Hook for wallet balances
 export const useWalletBalances = (enabled: boolean = true) => {
@@ -57,6 +58,19 @@ export const useWalletBalances = (enabled: boolean = true) => {
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000), // Exponential backoff
     onError: (error) => {
       console.error('Wallet balances query error:', error);
+      
+      // Log wallet query error
+      errorLogger.logError({
+        category: 'WALLET_ERROR',
+        message: 'Failed to fetch wallet balances via React Query',
+        details: error,
+        context: {
+          walletAddress: publicKey?.toString(),
+          rpcEndpoint: connection?.rpcEndpoint,
+          operation: 'useWalletBalances'
+        },
+        component: 'useWalletPortfolio'
+      });
     },
   });
 };
@@ -102,6 +116,19 @@ export const useWalletPortfolio = (enabled: boolean = true) => {
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000), // Exponential backoff
     onError: (error) => {
       console.error('Wallet portfolio query error:', error);
+      
+      // Log portfolio query error
+      errorLogger.logError({
+        category: 'WALLET_ERROR', 
+        message: 'Failed to fetch wallet portfolio via React Query',
+        details: error,
+        context: {
+          walletAddress: publicKey?.toString(),
+          rpcEndpoint: connection?.rpcEndpoint,
+          operation: 'useWalletPortfolio'
+        },
+        component: 'useWalletPortfolio'
+      });
     },
   });
 

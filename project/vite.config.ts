@@ -8,13 +8,14 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      buffer: 'buffer',
     },
   },
   define: {
     global: 'globalThis',
   },
   optimizeDeps: {
-    include: ['@solana/web3.js', '@raydium-io/raydium-sdk-v2'],
+    include: ['@solana/web3.js', '@raydium-io/raydium-sdk-v2', 'buffer'],
     exclude: ['lucide-react'],
   },
   build: {

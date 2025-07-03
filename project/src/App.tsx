@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { QueryProvider } from './contexts/QueryProvider';
 import { ServiceProvider } from './services/service-provider';
 import { WalletProvider } from './components/WalletProvider';
@@ -10,6 +10,11 @@ import { useAppStore } from './store/useAppStore';
 import { PAGE_VIEWS } from './shared/constants';
 import { WalletConnectionDebug } from './components/debug/WalletConnectionDebug';
 import { WalletDebugger } from './components/debug/WalletDebugger';
+import { resolveWalletProviderConflicts } from './utils/wallet-provider-fix';
+import { errorLogger } from './services/error-logger.service';
+import { interceptLocalhostRequests } from './services/api/mock-api-server';
+import { testBufferPolyfill } from './utils/buffer-test';
+import { handleRaydiumError, solanaErrorHandler } from './utils/solana-error-handler';
 
 // Lazy loading das páginas
 const Dashboard = lazy(() => import('./components/Dashboard'));
@@ -71,10 +76,74 @@ const AppContent: React.FC = () => {
 };
 
 function App() {
+  useEffect(() => {
+    // Initialize localhost request interceptor (prevents connection errors)
+    interceptLocalhostRequests();
+    
+    // Initialize wallet provider conflict resolution
+    resolveWalletProviderConflicts();
+    
+    // Initialize error monitoring
+    errorLogger.logInfo({
+      message: 'VaraYield AI application started',
+      details: {
+        timestamp: new Date().toISOString(),
+        userAgent: navigator.userAgent,
+        url: window.location.href,
+        interceptorsEnabled: true
+      },
+      context: {
+        component: 'App'
+      }
+    });
+
+    // Test Buffer polyfill
+    setTimeout(() => {
+      const bufferTestResult = testBufferPolyfill();
+      if (!bufferTestResult.success) {
+        errorLogger.logError({
+          category: 'UNKNOWN_ERROR',
+          message: 'Buffer polyfill validation failed',
+          details: bufferTestResult,
+          context: {
+            component: 'App',
+            operation: 'bufferPolyfillTest'
+          }
+        });
+      }
+    }, 1000);
+
+    // Expose utilities globally for debugging
+    if (typeof window !== 'undefined') {
+      (window as any).errorLogger = errorLogger;
+      (window as any).testErrorMonitoring = () => {
+        return import('./utils/test-error-monitoring').then(module => 
+          module.testErrorMonitoring()
+        );
+      };
+      (window as any).resolveWalletConflicts = resolveWalletProviderConflicts;
+      (window as any).testBufferPolyfill = testBufferPolyfill;
+    }
+  }, []);
+
   return (
     <ErrorBoundary
       onError={(error, errorInfo) => {
-        // Log to external service in production
+        // Log to our error monitoring system
+        errorLogger.logError({
+          category: 'UNKNOWN_ERROR',
+          message: 'App-level React error boundary triggered',
+          details: {
+            error: error.message,
+            stack: error.stack,
+            componentStack: errorInfo.componentStack
+          },
+          context: {
+            component: 'App',
+            url: window.location.href
+          }
+        });
+        
         console.error('App-level error:', error, errorInfo);
       }}
     >

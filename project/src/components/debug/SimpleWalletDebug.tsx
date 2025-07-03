@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { Bug, RefreshCw, CheckCircle, AlertCircle, Settings } from 'lucide-react';
+import { Bug, RefreshCw, CheckCircle, AlertCircle, Settings, Activity } from 'lucide-react';
 import { RPCFallbackService } from '../../services/rpc-fallback.service';
 import { useServices } from '../../services/service-provider';
 import { WalletMode } from '../../services/api/wallet.service';
 import { useWalletPortfolioDashboard } from '../../hooks/queries/useWalletPortfolio';
+import ErrorDashboard from './ErrorDashboard';
 
 const SimpleWalletDebug: React.FC = () => {
   const { publicKey, connected } = useWallet();
@@ -17,6 +18,7 @@ const SimpleWalletDebug: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [walletMode, setWalletModeState] = useState<WalletMode>('real'); // Production: only real data
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showErrorMonitoring, setShowErrorMonitoring] = useState(false);
 
   const rpcFallback = RPCFallbackService.getInstance();
 
@@ -103,6 +105,13 @@ const SimpleWalletDebug: React.FC = () => {
           <h2 className="text-xl font-semibold text-white">RPC & Wallet Debug</h2>
         </div>
         <div className="flex items-center space-x-3">
+          <button
+            onClick={() => setShowErrorMonitoring(!showErrorMonitoring)}
+            className={`flex items-center px-3 py-2 ${showErrorMonitoring ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-600 hover:bg-gray-700'} text-white rounded-lg text-sm`}
+          >
+            <Activity className="h-4 w-4 mr-2" />
+            {showErrorMonitoring ? 'Hide' : 'Show'} Errors
+          </button>
           <button
             onClick={refreshEndpointStatus}
             disabled={isRefreshing}
@@ -391,6 +400,17 @@ const SimpleWalletDebug: React.FC = () => {
                 Criar conta Helius
               </a>
             </div>
+          </div>
+        )}
+
+        {/* Error Monitoring Dashboard */}
+        {showErrorMonitoring && (
+          <div className="bg-gray-800 rounded-lg p-4">
+            <div className="flex items-center mb-4">
+              <Activity className="h-5 w-5 text-red-400 mr-2" />
+              <h3 className="font-medium text-white">Monitor de Erros em Tempo Real</h3>
+            </div>
+            <ErrorDashboard />
           </div>
         )}
       </div>
