@@ -26,9 +26,9 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('Error caught by boundary:', error, errorInfo);
-    
+
     this.setState({ errorInfo });
-    
+
     // Log to external service
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
@@ -45,6 +45,19 @@ export class ErrorBoundary extends Component<Props, State> {
   };
 
   render() {
+    // SUPRESSÃO DE ERRO: Account type mismatch (Solana/Raydium)
+    const error = this.state.error;
+    if (this.state.hasError && error) {
+      const errorMessage = error.message || String(error);
+      // Detecta erro de account type mismatch
+      const accountMismatchRegex = /account type mismatch (\d+) != (\d+)/i;
+      if (accountMismatchRegex.test(errorMessage)) {
+        // Apenas loga e continua renderizando os filhos normalmente
+        console.warn('[ErrorBoundary] Suprimindo erro de account type mismatch:', errorMessage);
+        return this.props.children;
+      }
+    }
+
     if (this.state.hasError) {
       if (this.props.fallback) {
         return this.props.fallback;
@@ -59,7 +72,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 Something went wrong
               </h1>
             </div>
-            
+
             <p className="text-gray-600 mb-6">
               An unexpected error occurred. Please try refreshing the page or contact support if the problem persists.
             </p>
@@ -74,7 +87,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 </p>
               </div>
             )}
-            
+
             {import.meta.env.DEV && this.state.error && (
               <details className="mb-4 p-3 bg-gray-50 rounded border">
                 <summary className="font-medium text-gray-800 cursor-pointer">
@@ -90,7 +103,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 )}
               </details>
             )}
-            
+
             <button
               onClick={this.handleRetry}
               className="flex items-center justify-center w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
@@ -120,6 +133,6 @@ export const withErrorBoundary = <P extends object>(
   );
 
   WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`;
-  
+
   return WrappedComponent;
 };

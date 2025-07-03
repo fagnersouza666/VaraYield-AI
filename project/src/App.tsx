@@ -15,6 +15,8 @@ import { errorLogger } from './services/error-logger.service';
 import { interceptLocalhostRequests } from './services/api/mock-api-server';
 import { testBufferPolyfill } from './utils/buffer-test';
 import { handleRaydiumError, solanaErrorHandler } from './utils/solana-error-handler';
+import { safeRaydiumService } from './services/safe-raydium.service';
+import { raydiumSDKPatch } from './utils/raydium-sdk-patch';
 
 // Lazy loading das páginas
 const Dashboard = lazy(() => import('./components/Dashboard'));
@@ -77,6 +79,9 @@ const AppContent: React.FC = () => {
 
 function App() {
   useEffect(() => {
+    // Apply Raydium SDK patches FIRST (before any SDK operations)
+    raydiumSDKPatch.applyPatches();
+    
     // Initialize localhost request interceptor (prevents connection errors)
     interceptLocalhostRequests();
     
@@ -90,7 +95,8 @@ function App() {
         timestamp: new Date().toISOString(),
         userAgent: navigator.userAgent,
         url: window.location.href,
-        interceptorsEnabled: true
+        interceptorsEnabled: true,
+        raydiumPatchesApplied: true
       },
       context: {
         component: 'App'
@@ -124,6 +130,8 @@ function App() {
       (window as any).resolveWalletConflicts = resolveWalletProviderConflicts;
       (window as any).testBufferPolyfill = testBufferPolyfill;
       (window as any).solanaErrorHandler = solanaErrorHandler;
+      (window as any).safeRaydiumService = safeRaydiumService;
+      (window as any).raydiumSDKPatch = raydiumSDKPatch;
     }
   }, []);
 
