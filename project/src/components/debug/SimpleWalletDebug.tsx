@@ -137,7 +137,10 @@ const SimpleWalletDebug: React.FC = () => {
               </ul>
             </div>
             <div className="text-xs text-blue-300 bg-blue-800/20 p-2 rounded">
-              <strong>💡 Para melhor performance:</strong> Configure um endpoint RPC pago (Helius, QuickNode, Alchemy)
+              <strong>💡 Para melhor performance:</strong> Configure Helius Developer ($49/mês) - especializado em Solana.
+              <a href="https://helius.dev" target="_blank" rel="noopener noreferrer" className="underline ml-1">
+                Criar conta
+              </a>
             </div>
           </div>
         </div>
@@ -155,11 +158,20 @@ const SimpleWalletDebug: React.FC = () => {
             <div>
               <p className="text-gray-400 text-sm">Primary RPC Endpoint</p>
               <p className="text-white text-sm break-all">{connection.rpcEndpoint}</p>
+              {connection.rpcEndpoint.includes('helius-rpc.com') && (
+                <p className="text-green-400 text-xs mt-1">🚀 Using Helius endpoint - excellent for production</p>
+              )}
               {connection.rpcEndpoint.includes('ankr.com') && (
                 <p className="text-green-400 text-xs mt-1">✅ Using reliable Ankr endpoint</p>
               )}
               {connection.rpcEndpoint.includes('api.mainnet-beta.solana.com') && (
-                <p className="text-yellow-400 text-xs mt-1">⚠️ Official endpoint may be rate limited</p>
+                <p className="text-yellow-400 text-xs mt-1">⚠️ Official endpoint may be rate limited - consider Helius</p>
+              )}
+              {connection.rpcEndpoint.includes('quiknode.pro') && (
+                <p className="text-green-400 text-xs mt-1">🚀 Using QuickNode endpoint - good for production</p>
+              )}
+              {connection.rpcEndpoint.includes('alchemy.com') && (
+                <p className="text-green-400 text-xs mt-1">🚀 Using Alchemy endpoint - enterprise grade</p>
               )}
             </div>
             {currentEndpoint && (
@@ -347,8 +359,16 @@ const SimpleWalletDebug: React.FC = () => {
                 </ul>
               </div>
 
-              <div className="bg-yellow-800/30 p-2 rounded text-xs text-yellow-100">
-                <strong>💡 Dica:</strong> Endpoints RPC pagos oferecem maior limite de requests, menor latência e maior confiabilidade, essenciais para aplicações em produção.
+              <div className="space-y-2">
+                <div className="bg-yellow-800/30 p-2 rounded text-xs text-yellow-100">
+                  <strong>💡 Dica:</strong> Endpoints RPC pagos oferecem maior limite de requests, menor latência e maior confiabilidade, essenciais para aplicações em produção.
+                </div>
+                <div className="bg-blue-800/30 p-2 rounded text-xs text-blue-100">
+                  <strong>🚀 Recomendado:</strong> Helius Developer ($49/mês) - 10M créditos, especializado em Solana. 
+                  <a href="https://helius.dev" target="_blank" rel="noopener noreferrer" className="underline ml-1">
+                    Criar conta
+                  </a>
+                </div>
               </div>
             </div>
           </div>
@@ -365,8 +385,11 @@ const SimpleWalletDebug: React.FC = () => {
               <li>• <strong>Tokens sem preço:</strong> Tokens muito novos ou sem liquidez</li>
               <li>• <strong>Rate limiting:</strong> Muitas requisições aos endpoints públicos</li>
             </ul>
-            <div className="mt-3 p-2 bg-yellow-800/30 rounded text-xs text-yellow-100">
-              <strong>Solução:</strong> Configure um endpoint RPC pago para garantir dados consistentes em produção.
+            <div className="mt-3 p-2 bg-blue-800/30 rounded text-xs text-blue-100">
+              <strong>Solução recomendada:</strong> Configure Helius Developer ($49/mês) para dados consistentes.
+              <a href="https://helius.dev" target="_blank" rel="noopener noreferrer" className="underline ml-1">
+                Criar conta Helius
+              </a>
             </div>
           </div>
         )}

@@ -6,8 +6,13 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:prod": "NODE_ENV=production vite build --mode production",
+    "preview": "vite preview",
+    "preview:prod": "vite preview --port 3000",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "deploy:vercel": "vercel --prod",
+    "deploy:netlify": "netlify deploy --prod --dir=dist",
+    "serve": "serve -s dist -l 3000"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",
