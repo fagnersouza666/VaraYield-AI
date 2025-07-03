@@ -54,6 +54,22 @@ VITE_VARA_NETWORK=devnet  # or mainnet-beta
 
 ## 🔧 Solução de Problemas
 
+### ✅ RESOLVIDO: Dados da carteira não carregam
+
+**Problema identificado e corrigido**: Endpoints RPC não funcionais foram substituídos por endpoints testados e verificados.
+
+**Diagnóstico automático**:
+```bash
+cd project
+node scripts/diagnose-rpc.js
+```
+
+**Solução implementada**:
+- ✅ Endpoints RPC testados e funcionais
+- ✅ Sistema de fallback robusto
+- ✅ Diagnóstico automático de conectividade
+- ✅ Interface de debug integrada
+
 ### Phantom Wallet fica "Connecting"
 1. **Desabilite o autoConnect**: O projeto está configurado com `autoConnect={false}` para evitar loops
 2. **Clique manualmente** no botão "Select Wallet" para conectar
@@ -66,17 +82,24 @@ VITE_VARA_NETWORK=devnet  # or mainnet-beta
 3. **Desenvolvimento**: Para desenvolvimento, integre com APIs reais
 
 ### Portfolio mostra erro de RPC
-1. **Provedores Gratuitos**: RPC públicos têm limites de taxa
-2. **Tente Novamente**: Aguarde alguns minutos e clique "Tentar Novamente"
-3. **RPC Pago**: Para uso intensivo, configure um RPC pago no `.env`:
-   ```
-   VITE_VARA_RPC_URL=https://seu-endpoint-pago.com
-   ```
+**ATUALIZADO**: Agora usa endpoints verificados e funcionais.
+
+1. **Endpoints Testados**: O sistema agora usa apenas endpoints RPC testados
+2. **Debug Integrado**: Acesse "Wallet Debug" na barra lateral para diagnóstico
+3. **Fallback Automático**: Sistema troca automaticamente para endpoints funcionais
+4. **Guia Completo**: Veja [TROUBLESHOOTING.md](TROUBLESHOOTING.md) para guia detalhado
 
 ### Como configurar RPC personalizado
-1. Copie `.env.example` para `.env`
+1. Copie `.env.example` para `.env.local`
 2. Configure `VITE_VARA_RPC_URL` com seu endpoint
-3. Reinicie o projeto
+3. Teste com: `node scripts/diagnose-rpc.js`
+4. Reinicie o projeto
+
+### Debug e Monitoramento
+- **Wallet Debugger**: Interface integrada para testar conectividade
+- **Script de Diagnóstico**: Ferramenta CLI para testar endpoints RPC
+- **Logs Detalhados**: Console do navegador mostra status detalhado
+- **Modo Demo**: Fallback para dados demonstrativos se necessário
 
 ## 🔒 Security
 
