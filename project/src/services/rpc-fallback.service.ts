@@ -15,15 +15,21 @@ export class RPCFallbackService {
   private endpoints: EndpointConfig[] = this.initializeEndpoints();
 
   private initializeEndpoints(): EndpointConfig[] {
-    const configuredRpc = import.meta.env.VITE_VARA_RPC_URL || 'https://api.mainnet-beta.solana.com';
-    const backup1 = import.meta.env.VITE_VARA_RPC_BACKUP_1 || 'https://rpc.ankr.com/solana';
-    const backup2 = import.meta.env.VITE_VARA_RPC_BACKUP_2 || 'https://solana-api.projectserum.com';
-    const backup3 = import.meta.env.VITE_VARA_RPC_BACKUP_3 || 'https://rpc.magic.eden/mainnet';
+    const configuredRpc = import.meta.env.VITE_VARA_RPC_URL || 'https://rpc.ankr.com/solana';
+    const backup1 = import.meta.env.VITE_VARA_RPC_BACKUP_1 || 'https://api.mainnet-beta.solana.com';
+    const backup2 = import.meta.env.VITE_VARA_RPC_BACKUP_2 || 'https://solana.public-rpc.com';
+    const backup3 = import.meta.env.VITE_VARA_RPC_BACKUP_3 || 'https://api.devnet.solana.com';
+
+    console.log('🔧 Initializing RPC endpoints:');
+    console.log('Primary:', configuredRpc);
+    console.log('Backup 1:', backup1);
+    console.log('Backup 2:', backup2);
+    console.log('Backup 3:', backup3);
 
     return [
       {
         url: configuredRpc,
-        name: 'Primary Mainnet',
+        name: 'Primary (Ankr)',
         priority: 1,
         isWorking: true,
         lastChecked: 0,
@@ -31,7 +37,7 @@ export class RPCFallbackService {
       },
       {
         url: backup1,
-        name: 'Ankr Mainnet',
+        name: 'Solana Official',
         priority: 2,
         isWorking: true,
         lastChecked: 0,
@@ -39,7 +45,7 @@ export class RPCFallbackService {
       },
       {
         url: backup2,
-        name: 'Serum Mainnet',
+        name: 'Public RPC',
         priority: 3,
         isWorking: true,
         lastChecked: 0,
@@ -47,7 +53,7 @@ export class RPCFallbackService {
       },
       {
         url: backup3,
-        name: 'Magic Eden Mainnet',
+        name: 'Devnet Fallback',
         priority: 4,
         isWorking: true,
         lastChecked: 0,
@@ -55,7 +61,7 @@ export class RPCFallbackService {
       },
       {
         url: clusterApiUrl('mainnet-beta'),
-        name: 'Official Mainnet Fallback',
+        name: 'ClusterAPI Mainnet',
         priority: 5,
         isWorking: true,
         lastChecked: 0,

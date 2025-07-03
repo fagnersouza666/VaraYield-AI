@@ -181,6 +181,12 @@ const SimpleWalletDebug: React.FC = () => {
             <div>
               <p className="text-gray-400 text-sm">Primary RPC Endpoint</p>
               <p className="text-white text-sm break-all">{connection.rpcEndpoint}</p>
+              {connection.rpcEndpoint.includes('ankr.com') && (
+                <p className="text-green-400 text-xs mt-1">✅ Using reliable Ankr endpoint</p>
+              )}
+              {connection.rpcEndpoint.includes('api.mainnet-beta.solana.com') && (
+                <p className="text-yellow-400 text-xs mt-1">⚠️ Official endpoint may be rate limited</p>
+              )}
             </div>
             {currentEndpoint && (
               <>
@@ -209,12 +215,35 @@ const SimpleWalletDebug: React.FC = () => {
         <div className="bg-gray-700 rounded-lg p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-medium text-white">RPC Endpoints Status</h3>
-            <button
-              onClick={resetEndpoints}
-              className="text-blue-400 hover:text-blue-300 text-sm"
-            >
-              Reset All
-            </button>
+            <div className="flex space-x-2">
+              <button
+                onClick={async () => {
+                  setIsRefreshing(true);
+                  try {
+                    // Force test all endpoints and switch to best one
+                    const connection = await rpcFallback.getWorkingConnection();
+                    console.log('✅ Switched to best available endpoint');
+                    await refreshEndpointStatus();
+                    // Refresh wallet data
+                    refetchAll();
+                  } catch (error) {
+                    console.error('❌ Failed to find working endpoint:', error);
+                  } finally {
+                    setIsRefreshing(false);
+                  }
+                }}
+                disabled={isRefreshing}
+                className="text-green-400 hover:text-green-300 text-sm disabled:opacity-50"
+              >
+                Find Best
+              </button>
+              <button
+                onClick={resetEndpoints}
+                className="text-blue-400 hover:text-blue-300 text-sm"
+              >
+                Reset All
+              </button>
+            </div>
           </div>
           <div className="space-y-2">
             {endpointStatus.map((endpoint, index) => (
@@ -349,6 +378,46 @@ const SimpleWalletDebug: React.FC = () => {
           <div className="text-xs text-red-400 bg-red-900/20 p-2 rounded">
             <div className="font-medium">Erro:</div>
             <div className="mt-1">{error.message}</div>
+          </div>
+        )}
+
+        {/* RPC Improvement Recommendations */}
+        {(!currentEndpoint?.isWorking || currentEndpoint?.errorCount > 2) && (
+          <div className="bg-yellow-900/20 border border-yellow-500/50 rounded-lg p-4">
+            <h3 className="font-medium text-yellow-400 mb-3">🚀 Recomendações para Melhorar Conexão</h3>
+            
+            <div className="space-y-3">
+              <div className="text-yellow-200 text-sm">
+                <strong>Problema detectado:</strong> Endpoints RPC públicos estão instáveis ou com rate limiting.
+              </div>
+              
+              <div className="space-y-2">
+                <div className="text-yellow-100 text-sm">
+                  <strong>Soluções imediatas:</strong>
+                </div>
+                <ul className="text-yellow-200 text-xs space-y-1 ml-4">
+                  <li>• Clique em "Find Best" para trocar automaticamente para o melhor endpoint</li>
+                  <li>• Tente recarregar a página para reinicializar conexões</li>
+                  <li>• Use o modo "Demonstração" para testar a interface</li>
+                </ul>
+              </div>
+
+              <div className="space-y-2">
+                <div className="text-yellow-100 text-sm">
+                  <strong>Para produção (recomendado):</strong>
+                </div>
+                <ul className="text-yellow-200 text-xs space-y-1 ml-4">
+                  <li>• <strong>Helius:</strong> planos a partir de $99/mês - excelente para DeFi</li>
+                  <li>• <strong>QuickNode:</strong> planos a partir de $9/mês - boa performance</li>
+                  <li>• <strong>Alchemy:</strong> preço por uso - ideal para escala</li>
+                  <li>• <strong>Ankr:</strong> $99/mês - descentralizado e confiável</li>
+                </ul>
+              </div>
+
+              <div className="bg-yellow-800/30 p-2 rounded text-xs text-yellow-100">
+                <strong>💡 Dica:</strong> Endpoints RPC pagos oferecem maior limite de requests, menor latência e maior confiabilidade, essenciais para aplicações em produção.
+              </div>
+            </div>
           </div>
         )}
 
