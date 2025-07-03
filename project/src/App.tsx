@@ -123,26 +123,37 @@ function App() {
       };
       (window as any).resolveWalletConflicts = resolveWalletProviderConflicts;
       (window as any).testBufferPolyfill = testBufferPolyfill;
+      (window as any).solanaErrorHandler = solanaErrorHandler;
     }
   }, []);
 
   return (
     <ErrorBoundary
       onError={(error, errorInfo) => {
-        // Log to our error monitoring system
-        errorLogger.logError({
-          category: 'UNKNOWN_ERROR',
-          message: 'App-level React error boundary triggered',
-          details: {
-            error: error.message,
-            stack: error.stack,
-            componentStack: errorInfo.componentStack
-          },
-          context: {
-            component: 'App',
-            url: window.location.href
-          }
+        // Try to handle Solana/Raydium specific errors first
+        const wasSolanaError = handleRaydiumError(error, {
+          componentStack: errorInfo.componentStack,
+          url: window.location.href
         });
+
+        if (!wasSolanaError) {
+          // Log to our error monitoring system for non-Solana errors
+          errorLogger.logError({
+            category: 'UNKNOWN_ERROR',
+            message: 'App-level React error boundary triggered',
+            details: {
+              error: error.message,
+              stack: error.stack,
+              componentStack: errorInfo.componentStack
+            },
+            context: {
+              component: 'App',
+              url: window.location.href
+            }
+          });
+        } else {
+          console.warn('⚠️ Solana account error handled gracefully, app should continue working');
+        }
         
         console.error('App-level error:', error, errorInfo);
       }}

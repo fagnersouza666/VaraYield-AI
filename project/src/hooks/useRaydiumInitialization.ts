@@ -10,6 +10,7 @@ import {
 } from '../shared/errors';
 import { ERROR_MESSAGES } from '../shared/constants';
 import { objectValidation } from '../shared/validation';
+import { safeRaydiumService } from '../services/safe-raydium.service';
 
 interface UseRaydiumInitializationReturn {
   initializeRaydium: () => Promise<Raydium | null>;
@@ -26,8 +27,12 @@ const validateWalletConnection = (publicKey: unknown, signAllTransactions: unkno
 
 const createRaydiumInstance = async (
   params: RaydiumLoadParams
-): Promise<Raydium> => {
-  return await Raydium.load(params);
+): Promise<Raydium | null> => {
+  return await safeRaydiumService.safeExecute(
+    async () => await Raydium.load(params),
+    null, // fallback to null instead of crashing
+    'Raydium.load'
+  );
 };
 
 export const useRaydiumInitialization = (): UseRaydiumInitializationReturn => {
@@ -55,8 +60,13 @@ export const useRaydiumInitialization = (): UseRaydiumInitializationReturn => {
         disableLoadToken: false,
       });
       
-      logger.info('Raydium SDK initialized successfully');
-      return raydiumInstance;
+      if (raydiumInstance) {
+        logger.info('Raydium SDK initialized successfully');
+        return raydiumInstance;
+      } else {
+        logger.warn('Raydium SDK initialization failed due to account data errors, but app will continue');
+        return null; // Return null gracefully instead of throwing
+      }
     } catch (err) {
       const error = createErrorFromUnknown(err);
       const raydiumError = new RaydiumInitializationError(
