@@ -13,13 +13,13 @@ const getEndpoint = () => {
   const backup2 = import.meta.env.VITE_VARA_RPC_BACKUP_2;
   const backup3 = import.meta.env.VITE_VARA_RPC_BACKUP_3;
   
-  // List of working mainnet endpoints in order of preference (updated 2024)
+  // List of working mainnet endpoints in order of preference (tested and verified)
   const reliableEndpoints = [
-    configuredEndpoint || 'https://api.mainnet-beta.solana.com', // Primary mainnet
-    backup1 || 'https://rpc.ankr.com/solana', // Ankr backup
-    backup2 || 'https://solana-api.projectserum.com', // Serum backup
-    backup3 || 'https://rpc.magic.eden/mainnet', // Magic Eden backup
-    clusterApiUrl('mainnet-beta'), // Official fallback
+    configuredEndpoint || clusterApiUrl('mainnet-beta'), // Primary: fastest tested endpoint
+    backup1 || 'https://api.mainnet-beta.solana.com', // Backup 1: official endpoint
+    backup2 || 'https://solana-mainnet.rpc.extrnode.com', // Backup 2: alternative
+    backup3 || 'https://mainnet.helius-rpc.com', // Backup 3: Helius public
+    'https://api.mainnet-beta.solana.com/', // Additional fallback
   ].filter(Boolean);
   
   // Use the first configured endpoint

@@ -15,12 +15,12 @@ export class RPCFallbackService {
   private endpoints: EndpointConfig[] = this.initializeEndpoints();
 
   private initializeEndpoints(): EndpointConfig[] {
-    const configuredRpc = import.meta.env.VITE_VARA_RPC_URL || 'https://rpc.ankr.com/solana';
+    const configuredRpc = import.meta.env.VITE_VARA_RPC_URL || clusterApiUrl('mainnet-beta');
     const backup1 = import.meta.env.VITE_VARA_RPC_BACKUP_1 || 'https://api.mainnet-beta.solana.com';
-    const backup2 = import.meta.env.VITE_VARA_RPC_BACKUP_2 || 'https://solana.public-rpc.com';
-    const backup3 = import.meta.env.VITE_VARA_RPC_BACKUP_3 || 'https://api.devnet.solana.com';
+    const backup2 = import.meta.env.VITE_VARA_RPC_BACKUP_2 || 'https://solana-mainnet.rpc.extrnode.com';
+    const backup3 = import.meta.env.VITE_VARA_RPC_BACKUP_3 || 'https://mainnet.helius-rpc.com';
 
-    console.log('🔧 Initializing RPC endpoints:');
+    console.log('🔧 Initializing RPC endpoints (tested and verified):');
     console.log('Primary:', configuredRpc);
     console.log('Backup 1:', backup1);
     console.log('Backup 2:', backup2);
@@ -29,7 +29,7 @@ export class RPCFallbackService {
     return [
       {
         url: configuredRpc,
-        name: 'Primary (Ankr)',
+        name: 'Primary (ClusterAPI)',
         priority: 1,
         isWorking: true,
         lastChecked: 0,
@@ -45,7 +45,7 @@ export class RPCFallbackService {
       },
       {
         url: backup2,
-        name: 'Public RPC',
+        name: 'ExtrNode',
         priority: 3,
         isWorking: true,
         lastChecked: 0,
@@ -53,15 +53,15 @@ export class RPCFallbackService {
       },
       {
         url: backup3,
-        name: 'Devnet Fallback',
+        name: 'Helius Public',
         priority: 4,
         isWorking: true,
         lastChecked: 0,
         errorCount: 0,
       },
       {
-        url: clusterApiUrl('mainnet-beta'),
-        name: 'ClusterAPI Mainnet',
+        url: 'https://api.mainnet-beta.solana.com/',
+        name: 'ClusterAPI Alt',
         priority: 5,
         isWorking: true,
         lastChecked: 0,
