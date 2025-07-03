@@ -16,12 +16,16 @@ import { WalletService, TokenBalance } from '../types/wallet.types';
 import { RaydiumError } from '../../utils/errors';
 
 export class WalletPortfolioService implements PortfolioService {
+  private publicKey: PublicKey | null = null;
+
   constructor(
     private walletService: WalletService,
-    private publicKey: PublicKey | null = null
-  ) {}
+    publicKey: PublicKey | null = null
+  ) {
+    this.publicKey = publicKey;
+  }
 
-  setPublicKey(publicKey: PublicKey | null) {
+  setPublicKey(publicKey: PublicKey | null): void {
     this.publicKey = publicKey;
   }
 
@@ -33,31 +37,46 @@ export class WalletPortfolioService implements PortfolioService {
     try {
       console.log('🔄 Getting portfolio for wallet:', this.publicKey.toString());
       const walletBalance = await this.walletService.getWalletBalances(this.publicKey);
-      
+
       console.log('📊 Wallet data:', {
         solBalance: walletBalance.solBalance,
         tokenCount: walletBalance.tokenBalances.length,
         totalValue: walletBalance.totalValue
       });
-      
+
       // Convert wallet balances to portfolio positions
       const positions = await this.convertTokenBalancesToPositions(walletBalance.tokenBalances);
-      
-      // Add SOL as a position (always include SOL, even with 0 balance for display)
+
+      // Add SOL as a position with proper price handling
       const solAsset: Asset = {
         id: 'sol',
         symbol: 'SOL',
         name: 'Solana',
         decimals: 9,
         mintAddress: 'So11111111111111111111111111111111111111112',
-        price: 98.45, // This should come from price service
+        price: 98.45, // This should come from price service - using fallback price
         priceChange24h: 5.2,
         marketCap: 42000000000,
       };
 
+      // Calculate SOL value with proper handling for zero balances
       const solValue = walletBalance.solBalance * solAsset.price;
-      const totalValueWithSol = walletBalance.totalValue > 0 ? walletBalance.totalValue : solValue;
-      
+      console.log('💰 SOL calculation:', {
+        balance: walletBalance.solBalance,
+        price: solAsset.price,
+        value: solValue
+      });
+
+      // Calculate total value including SOL
+      const tokenTotalValue = walletBalance.totalValue || 0;
+      const totalValueWithSol = tokenTotalValue + solValue;
+
+      console.log('💵 Total value calculation:', {
+        tokenTotalValue,
+        solValue,
+        totalValueWithSol
+      });
+
       const solPosition: Position = {
         id: 'sol-position',
         asset: solAsset,
@@ -75,11 +94,17 @@ export class WalletPortfolioService implements PortfolioService {
       positions.unshift(solPosition);
 
       // Recalculate allocations with correct total
-      const finalTotalValue = Math.max(totalValueWithSol, 0.01); // Avoid division by zero
+      const finalTotalValue = Math.max(totalValueWithSol, 0);
       const finalPositions = positions.map(pos => ({
         ...pos,
-        allocation: (pos.value / finalTotalValue) * 100,
+        allocation: finalTotalValue > 0 ? (pos.value / finalTotalValue) * 100 : 0,
       }));
+
+      console.log('📈 Final portfolio calculation:', {
+        finalTotalValue,
+        positionsCount: finalPositions.length,
+        positionsValues: finalPositions.map(p => ({ symbol: p.asset.symbol, value: p.value }))
+      });
 
       // Calculate portfolio summary
       const summary = this.calculatePortfolioSummary(finalPositions, finalTotalValue);
@@ -92,7 +117,7 @@ export class WalletPortfolioService implements PortfolioService {
         message: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined
       });
-      
+
       // Return empty portfolio on error to prevent infinite loading
       const emptySummary: PortfolioSummary = {
         totalValue: 0,
@@ -114,34 +139,44 @@ export class WalletPortfolioService implements PortfolioService {
 
   private async convertTokenBalancesToPositions(tokenBalances: readonly TokenBalance[]): Promise<Position[]> {
     const positions: Position[] = [];
-    
+
     try {
-      // Get total value for allocation calculation
-      const totalValue = tokenBalances.reduce((sum, token) => sum + (token.value || 0), 0);
+      console.log('🔄 Converting token balances to positions:', {
+        tokenCount: tokenBalances.length,
+        tokens: tokenBalances.map(t => ({ symbol: t.symbol, balance: t.uiAmount, value: t.value }))
+      });
 
       for (const tokenBalance of tokenBalances) {
         try {
           // Include all tokens with any balance (LP tokens can have tiny values but be worth something)
           if (tokenBalance.uiAmount > 0 || tokenBalance.balance > 0) {
-            console.log(`🔄 Processing token: ${tokenBalance.symbol} - Balance: ${tokenBalance.uiAmount} - Raw: ${tokenBalance.balance}`);
-            
+            console.log(`🔄 Processing token: ${tokenBalance.symbol} - Balance: ${tokenBalance.uiAmount} - Raw: ${tokenBalance.balance} - Value: ${tokenBalance.value || 0}`);
+
+            // Calculate price from value and balance, with fallback to 0
+            let tokenPrice = 0;
+            if (tokenBalance.value && tokenBalance.uiAmount > 0) {
+              tokenPrice = tokenBalance.value / tokenBalance.uiAmount;
+            }
+
             const asset: Asset = {
               id: tokenBalance.mint.toLowerCase(),
               symbol: tokenBalance.symbol || 'UNKNOWN',
               name: tokenBalance.name || 'Unknown Token',
               decimals: tokenBalance.decimals || 0,
               mintAddress: tokenBalance.mint,
-              price: tokenBalance.value && tokenBalance.uiAmount > 0 ? tokenBalance.value / tokenBalance.uiAmount : 0,
+              price: tokenPrice,
               priceChange24h: 0, // Would need to get from price service
             };
+
+            const tokenValue = tokenBalance.value || 0;
 
             const position: Position = {
               id: `${tokenBalance.mint}-position`,
               asset,
               quantity: tokenBalance.uiAmount,
-              value: tokenBalance.value || 0,
-              allocation: totalValue > 0 ? ((tokenBalance.value || 0) / totalValue) * 100 : 0,
-              averagePrice: asset.price,
+              value: tokenValue,
+              allocation: 0, // Will be calculated later
+              averagePrice: tokenPrice,
               pnl: 0, // Would need historical purchase data
               pnlPercentage: 0,
               createdAt: new Date().toISOString(),
@@ -149,6 +184,9 @@ export class WalletPortfolioService implements PortfolioService {
             };
 
             positions.push(position);
+            console.log(`✅ Added position: ${asset.symbol} - Quantity: ${position.quantity} - Value: $${position.value}`);
+          } else {
+            console.log(`⏭️ Skipping token with zero balance: ${tokenBalance.symbol}`);
           }
         } catch (tokenError) {
           console.warn('Failed to convert token to position:', tokenBalance.mint, tokenError);
@@ -156,16 +194,29 @@ export class WalletPortfolioService implements PortfolioService {
         }
       }
 
-      return positions.sort((a, b) => b.value - a.value); // Sort by value descending
+      console.log('📊 Conversion complete:', {
+        inputTokens: tokenBalances.length,
+        outputPositions: positions.length,
+        totalValue: positions.reduce((sum, p) => sum + p.value, 0)
+      });
+
+      return positions;
     } catch (error) {
-      console.error('Failed to convert token balances to positions:', error);
-      return []; // Return empty array on error
+      console.error('❌ Failed to convert token balances to positions:', error);
+      return [];
     }
   }
 
   private calculatePortfolioSummary(positions: Position[], totalValue: number): PortfolioSummary {
     const totalPnl = positions.reduce((sum, pos) => sum + pos.pnl, 0);
     const totalPnlPercentage = totalValue > 0 ? (totalPnl / totalValue) * 100 : 0;
+
+    console.log('📈 Portfolio summary calculation:', {
+      totalValue,
+      totalPnl,
+      totalPnlPercentage,
+      positionsCount: positions.length
+    });
 
     return {
       totalValue,
@@ -189,11 +240,11 @@ export class WalletPortfolioService implements PortfolioService {
     const data = Array.from({ length: days }, (_, i) => {
       const date = new Date();
       date.setDate(date.getDate() - (days - i - 1));
-      
+
       const baseValue = 1500;
       const variation = Math.sin(i * 0.1) * 50 + Math.random() * 20;
       const value = baseValue + variation;
-      
+
       return {
         timestamp: date.toISOString(),
         value,
@@ -278,16 +329,32 @@ export class WalletPortfolioService implements PortfolioService {
     return knownAssets;
   }
 
-
   private getPeriodDays(period: PortfolioPerformance['period']): number {
     switch (period) {
-      case '24h': return 1;
+      case '1d': return 1;
       case '7d': return 7;
       case '30d': return 30;
       case '90d': return 90;
       case '1y': return 365;
-      case 'all': return 730;
-      default: return 30;
+      default: return 7;
     }
   }
+
+  // Wallet portfolio doesn't support these operations
+  async createPosition(): Promise<Position> {
+    throw new RaydiumError('Cannot create positions in wallet portfolio. Use your wallet to acquire tokens.');
+  }
+
+  async updatePosition(): Promise<Position> {
+    throw new RaydiumError('Cannot update positions in wallet portfolio. Positions are based on actual wallet balances.');
+  }
+
+  async deletePosition(): Promise<void> {
+    throw new RaydiumError('Cannot delete positions in wallet portfolio. Use your wallet to transfer or swap tokens.');
+  }
+
+  async rebalancePortfolio(): Promise<{ summary: PortfolioSummary; positions: Position[] }> {
+    throw new RaydiumError('Wallet portfolio rebalancing requires external DEX integration.');
+  }
+}
 }

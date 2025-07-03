@@ -5,15 +5,18 @@ import { Bug, RefreshCw, CheckCircle, AlertCircle, Settings } from 'lucide-react
 import { RPCFallbackService } from '../../services/rpc-fallback.service';
 import { useServices } from '../../services/service-provider';
 import { WalletMode } from '../../services/api/wallet.service';
+import { useWalletPortfolioDashboard } from '../../hooks/queries/useWalletPortfolio';
 
 const SimpleWalletDebug: React.FC = () => {
   const { publicKey, connected } = useWallet();
   const { connection } = useConnection();
   const { walletService } = useServices();
   const [endpointStatus, setEndpointStatus] = useState<any[]>([]);
+  const { portfolio, isLoading, error, refetchAll } = useWalletPortfolioDashboard();
   const [currentEndpoint, setCurrentEndpoint] = useState<any>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [walletMode, setWalletModeState] = useState<WalletMode>('error');
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const rpcFallback = RPCFallbackService.getInstance();
 
@@ -23,10 +26,10 @@ const SimpleWalletDebug: React.FC = () => {
       // Get current status
       const status = rpcFallback.getEndpointStatus();
       const current = rpcFallback.getCurrentEndpoint();
-      
+
       setEndpointStatus(status);
       setCurrentEndpoint(current);
-      
+
       // Update wallet mode state
       if (walletService && 'getWalletMode' in walletService) {
         setWalletModeState(walletService.getWalletMode());
@@ -50,6 +53,43 @@ const SimpleWalletDebug: React.FC = () => {
     rpcFallback.resetEndpoints();
     refreshEndpointStatus();
   };
+
+  const getConnectionStatus = () => {
+    if (isLoading) return { icon: RefreshCw, text: 'Conectando...', color: 'text-yellow-500', spinning: true };
+    if (error) return { icon: AlertCircle, text: 'Erro nos dados', color: 'text-red-500', spinning: false };
+    if (connected) return { icon: CheckCircle, text: 'Conectado', color: 'text-green-500', spinning: false };
+    return { icon: AlertCircle, text: 'Desconectado', color: 'text-red-500', spinning: false };
+  };
+
+  const getPortfolioStatus = () => {
+    if (isLoading) return { icon: RefreshCw, text: 'Carregando portfólio...', color: 'text-yellow-500', spinning: true };
+    if (error) return { icon: AlertCircle, text: 'Erro nos dados', color: 'text-red-500', spinning: false };
+    if (portfolio) return { icon: CheckCircle, text: 'Dados carregados', color: 'text-green-500', spinning: false };
+    return { icon: AlertCircle, text: 'Sem dados', color: 'text-gray-500', spinning: false };
+  };
+
+  const handleDemoMode = () => {
+    // Force demo mode by setting wallet mode to demo
+    if (window.varaWalletService) {
+      window.varaWalletService.setWalletMode('demo');
+      refetchAll();
+    } else {
+      alert('Serviço de carteira não disponível. Recarregue a página.');
+    }
+  };
+
+  const handleRealMode = () => {
+    // Switch back to real mode
+    if (window.varaWalletService) {
+      window.varaWalletService.setWalletMode('real');
+      refetchAll();
+    } else {
+      alert('Serviço de carteira não disponível. Recarregue a página.');
+    }
+  };
+
+  const connectionStatus = getConnectionStatus();
+  const portfolioStatus = getPortfolioStatus();
 
   useEffect(() => {
     refreshEndpointStatus();
@@ -87,11 +127,10 @@ const SimpleWalletDebug: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <button
                 onClick={() => handleWalletModeChange('error')}
-                className={`p-3 rounded-lg border text-sm font-medium transition-colors ${
-                  walletMode === 'error'
+                className={`p-3 rounded-lg border text-sm font-medium transition-colors ${walletMode === 'error'
                     ? 'bg-red-600 border-red-500 text-white'
                     : 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'
-                }`}
+                  }`}
               >
                 <div className="text-left">
                   <div className="font-semibold">❌ Mostrar Erro</div>
@@ -100,11 +139,10 @@ const SimpleWalletDebug: React.FC = () => {
               </button>
               <button
                 onClick={() => handleWalletModeChange('real')}
-                className={`p-3 rounded-lg border text-sm font-medium transition-colors ${
-                  walletMode === 'real'
+                className={`p-3 rounded-lg border text-sm font-medium transition-colors ${walletMode === 'real'
                     ? 'bg-blue-600 border-blue-500 text-white'
                     : 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'
-                }`}
+                  }`}
               >
                 <div className="text-left">
                   <div className="font-semibold">📡 Apenas Real</div>
@@ -113,11 +151,10 @@ const SimpleWalletDebug: React.FC = () => {
               </button>
               <button
                 onClick={() => handleWalletModeChange('demo')}
-                className={`p-3 rounded-lg border text-sm font-medium transition-colors ${
-                  walletMode === 'demo'
+                className={`p-3 rounded-lg border text-sm font-medium transition-colors ${walletMode === 'demo'
                     ? 'bg-yellow-600 border-yellow-500 text-white'
                     : 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'
-                }`}
+                  }`}
               >
                 <div className="text-left">
                   <div className="font-semibold">🎭 Demonstração</div>
@@ -277,6 +314,74 @@ const SimpleWalletDebug: React.FC = () => {
               <p>• <strong>Requisito:</strong> Servidores RPC devem estar funcionando</p>
               <p>• <strong>Recomendação:</strong> Use com endpoints RPC confiáveis</p>
             </div>
+          </div>
+        )}
+
+        {/* Portfolio Status */}
+        <div className="bg-gray-700 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <portfolioStatus.icon className={`h-4 w-4 mr-2 ${portfolioStatus.color} ${portfolioStatus.spinning ? 'animate-spin' : ''}`} />
+              <span className="text-sm text-gray-300">{portfolioStatus.text}</span>
+            </div>
+            <button
+              onClick={refetchAll}
+              className="text-blue-400 hover:text-blue-300 text-xs"
+              disabled={isLoading}
+            >
+              Atualizar
+            </button>
+          </div>
+        </div>
+
+        {/* Portfolio Value */}
+        {portfolio && (
+          <div className="text-xs text-gray-400">
+            Valor total: ${portfolio.summary.totalValue.toFixed(2)}
+            {portfolio.summary.totalValue === 0 && (
+              <span className="text-yellow-500 ml-2">⚠️ Valores zerados</span>
+            )}
+          </div>
+        )}
+
+        {/* Error Details */}
+        {error && (
+          <div className="text-xs text-red-400 bg-red-900/20 p-2 rounded">
+            <div className="font-medium">Erro:</div>
+            <div className="mt-1">{error.message}</div>
+          </div>
+        )}
+
+        {/* Advanced Options */}
+        {showAdvanced && (
+          <div className="border-t border-gray-700 pt-3 mt-3">
+            <div className="text-xs text-gray-400 mb-2">Opções de Debug:</div>
+            <div className="space-y-2">
+              <button
+                onClick={handleDemoMode}
+                className="w-full text-left text-xs bg-blue-900/20 text-blue-300 p-2 rounded hover:bg-blue-900/30"
+              >
+                🎭 Usar Dados Demo (se RPC não funcionar)
+              </button>
+              <button
+                onClick={handleRealMode}
+                className="w-full text-left text-xs bg-green-900/20 text-green-300 p-2 rounded hover:bg-green-900/30"
+              >
+                🌐 Tentar Dados Reais (RPC)
+              </button>
+            </div>
+
+            {portfolio?.summary.totalValue === 0 && (
+              <div className="mt-2 text-xs text-yellow-400 bg-yellow-900/20 p-2 rounded">
+                <div className="font-medium">💡 Valores zerados podem indicar:</div>
+                <ul className="mt-1 space-y-1 text-xs">
+                  <li>• Carteira vazia (sem tokens)</li>
+                  <li>• Problemas de conectividade RPC</li>
+                  <li>• Tokens sem preços de mercado</li>
+                  <li>• Rede Devnet (tokens de teste)</li>
+                </ul>
+              </div>
+            )}
           </div>
         )}
       </div>

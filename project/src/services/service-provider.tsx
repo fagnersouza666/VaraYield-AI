@@ -1,17 +1,22 @@
-import React, { createContext, useContext, ReactNode } from 'react';
-import { RaydiumService, HttpRaydiumService, MockRaydiumService } from './api/raydium.service';
-import { PortfolioService, HttpPortfolioService, MockPortfolioService } from './api/portfolio.service';
+import React, { createContext, useContext, ReactNode, useMemo } from 'react';
+import { useConnection } from '@solana/wallet-adapter-react';
+import { SolanaWalletService } from './api/wallet.service';
+import { HttpRaydiumService, MockRaydiumService } from './api/raydium.service';
+import { HttpPortfolioService, MockPortfolioService } from './api/portfolio.service';
+import { PoolAnalyticsService } from './api/pool-analytics.service';
 import { TechnicalIndicatorsService, HttpTechnicalIndicatorsService, MockTechnicalIndicatorsService } from './api/technical-indicators.service';
 import { AdvancedRiskManagerService, HttpAdvancedRiskManagerService, MockAdvancedRiskManagerService } from './api/advanced-risk-manager.service';
 import { RealTimeMonitorService, HttpRealTimeMonitorService } from './api/real-time-monitor.service';
 import { FetchHttpClient } from './api/http-client';
 
 interface Services {
-  raydiumService: RaydiumService;
-  portfolioService: PortfolioService;
+  walletService: SolanaWalletService;
+  raydiumService: HttpRaydiumService | MockRaydiumService;
+  portfolioService: HttpPortfolioService | MockPortfolioService;
+  poolAnalyticsService: PoolAnalyticsService;
   technicalIndicatorsService: TechnicalIndicatorsService;
-  advancedRiskManagerService: AdvancedRiskManagerService;
   realTimeMonitorService: RealTimeMonitorService;
+  advancedRiskManagerService: AdvancedRiskManagerService;
 }
 
 const ServicesContext = createContext<Services | null>(null);
@@ -22,12 +27,14 @@ interface ServiceProviderProps {
   useMockServices?: boolean;
 }
 
-export const ServiceProvider: React.FC<ServiceProviderProps> = ({ 
-  children, 
+export const ServiceProvider: React.FC<ServiceProviderProps> = ({
+  children,
   baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api',
   useMockServices = import.meta.env.DEV // Use mock services in development by default
 }) => {
-  const services: Services = React.useMemo(() => {
+  const { connection } = useConnection();
+
+  const services = useMemo(() => {
     if (useMockServices) {
       return {
         raydiumService: new MockRaydiumService(),
@@ -35,6 +42,8 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({
         technicalIndicatorsService: new MockTechnicalIndicatorsService(),
         advancedRiskManagerService: new MockAdvancedRiskManagerService(),
         realTimeMonitorService: new HttpRealTimeMonitorService(baseUrl),
+        walletService: new SolanaWalletService(connection),
+        poolAnalyticsService: new PoolAnalyticsService(baseUrl),
       };
     }
 
@@ -42,15 +51,39 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({
       10000, // 10 second timeout
       3      // 3 retries
     );
-    
+
+    const raydiumService = new HttpRaydiumService(baseUrl, httpClient);
+    const portfolioService = new HttpPortfolioService(baseUrl, httpClient);
+    const technicalIndicatorsService = new HttpTechnicalIndicatorsService(baseUrl);
+    const advancedRiskManagerService = new HttpAdvancedRiskManagerService(baseUrl);
+    const realTimeMonitorService = new HttpRealTimeMonitorService(baseUrl);
+    const walletService = new SolanaWalletService(connection);
+    const poolAnalyticsService = new PoolAnalyticsService(baseUrl);
+
+    // Expose wallet service globally for debug purposes
+    if (typeof window !== 'undefined') {
+      (window as any).varaWalletService = walletService;
+      (window as any).varaServices = {
+        walletService,
+        raydiumService,
+        portfolioService,
+        poolAnalyticsService,
+        technicalIndicatorsService,
+        realTimeMonitorService,
+        advancedRiskManagerService,
+      };
+    }
+
     return {
-      raydiumService: new HttpRaydiumService(baseUrl, httpClient),
-      portfolioService: new HttpPortfolioService(baseUrl, httpClient),
-      technicalIndicatorsService: new HttpTechnicalIndicatorsService(baseUrl),
-      advancedRiskManagerService: new HttpAdvancedRiskManagerService(baseUrl),
-      realTimeMonitorService: new HttpRealTimeMonitorService(baseUrl),
+      walletService,
+      raydiumService,
+      portfolioService,
+      poolAnalyticsService,
+      technicalIndicatorsService,
+      realTimeMonitorService,
+      advancedRiskManagerService,
     };
-  }, [baseUrl, useMockServices]);
+  }, [baseUrl, useMockServices, connection]);
 
   return (
     <ServicesContext.Provider value={services}>
@@ -60,20 +93,20 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({
 };
 
 export const useServices = (): Services => {
-  const services = useContext(ServicesContext);
-  if (!services) {
+  const context = useContext(ServicesContext);
+  if (!context) {
     throw new Error('useServices must be used within a ServiceProvider');
   }
-  return services;
+  return context;
 };
 
 // Individual service hooks for convenience
-export const useRaydiumService = (): RaydiumService => {
+export const useRaydiumService = (): HttpRaydiumService | MockRaydiumService => {
   const { raydiumService } = useServices();
   return raydiumService;
 };
 
-export const usePortfolioService = (): PortfolioService => {
+export const usePortfolioService = (): HttpPortfolioService | MockPortfolioService => {
   const { portfolioService } = useServices();
   return portfolioService;
 };
