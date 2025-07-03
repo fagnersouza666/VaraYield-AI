@@ -1,11 +1,17 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { RaydiumService, HttpRaydiumService, MockRaydiumService } from './api/raydium.service';
 import { PortfolioService, HttpPortfolioService, MockPortfolioService } from './api/portfolio.service';
+import { TechnicalIndicatorsService, HttpTechnicalIndicatorsService, MockTechnicalIndicatorsService } from './api/technical-indicators.service';
+import { AdvancedRiskManagerService, HttpAdvancedRiskManagerService, MockAdvancedRiskManagerService } from './api/advanced-risk-manager.service';
+import { RealTimeMonitorService, HttpRealTimeMonitorService } from './api/real-time-monitor.service';
 import { FetchHttpClient } from './api/http-client';
 
 interface Services {
   raydiumService: RaydiumService;
   portfolioService: PortfolioService;
+  technicalIndicatorsService: TechnicalIndicatorsService;
+  advancedRiskManagerService: AdvancedRiskManagerService;
+  realTimeMonitorService: RealTimeMonitorService;
 }
 
 const ServicesContext = createContext<Services | null>(null);
@@ -26,6 +32,9 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({
       return {
         raydiumService: new MockRaydiumService(),
         portfolioService: new MockPortfolioService(),
+        technicalIndicatorsService: new MockTechnicalIndicatorsService(),
+        advancedRiskManagerService: new MockAdvancedRiskManagerService(),
+        realTimeMonitorService: new HttpRealTimeMonitorService(baseUrl),
       };
     }
 
@@ -37,6 +46,9 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({
     return {
       raydiumService: new HttpRaydiumService(baseUrl, httpClient),
       portfolioService: new HttpPortfolioService(baseUrl, httpClient),
+      technicalIndicatorsService: new HttpTechnicalIndicatorsService(baseUrl),
+      advancedRiskManagerService: new HttpAdvancedRiskManagerService(baseUrl),
+      realTimeMonitorService: new HttpRealTimeMonitorService(baseUrl),
     };
   }, [baseUrl, useMockServices]);
 
@@ -64,6 +76,21 @@ export const useRaydiumService = (): RaydiumService => {
 export const usePortfolioService = (): PortfolioService => {
   const { portfolioService } = useServices();
   return portfolioService;
+};
+
+export const useTechnicalIndicatorsService = (): TechnicalIndicatorsService => {
+  const { technicalIndicatorsService } = useServices();
+  return technicalIndicatorsService;
+};
+
+export const useAdvancedRiskManagerService = (): AdvancedRiskManagerService => {
+  const { advancedRiskManagerService } = useServices();
+  return advancedRiskManagerService;
+};
+
+export const useRealTimeMonitorService = (): RealTimeMonitorService => {
+  const { realTimeMonitorService } = useServices();
+  return realTimeMonitorService;
 };
 
 // Hook for accessing services in components that need multiple services
