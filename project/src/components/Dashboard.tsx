@@ -1,4 +1,5 @@
 import React, { useCallback } from 'react';
+import { TrendingUp } from 'lucide-react';
 import { useRaydiumDashboard } from '../hooks/queries/useRaydium';
 import { useAppStore } from '../store/useAppStore';
 import { logger } from '../shared/logger';

@@ -8,6 +8,7 @@ import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import { useAppStore } from './store/useAppStore';
 import { PAGE_VIEWS } from './shared/constants';
+import { WalletConnectionDebug } from './components/debug/WalletConnectionDebug';
 
 // Lazy loading das páginas
 const Dashboard = lazy(() => import('./components/Dashboard'));
@@ -63,6 +64,7 @@ const AppContent: React.FC = () => {
           {renderCurrentPage()}
         </main>
       </div>
+      <WalletConnectionDebug />
     </div>
   );
 };

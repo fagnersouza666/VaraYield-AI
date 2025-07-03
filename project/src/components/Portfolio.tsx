@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { Plus, RefreshCw, Settings, Wallet } from 'lucide-react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
@@ -13,7 +13,27 @@ import { Position } from '../services/types/portfolio.types';
 const Portfolio: React.FC = React.memo(() => {
   const [selectedPosition, setSelectedPosition] = useState<Position | null>(null);
   const [showAddPosition, setShowAddPosition] = useState(false);
-  const { connected } = useWallet();
+  const { connected, connecting, disconnecting, wallet, publicKey } = useWallet();
+  const [connectionTimeout, setConnectionTimeout] = useState(false);
+
+  // Monitor connection timeout
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    
+    if (connecting) {
+      console.log('⏳ Wallet connecting, starting timeout timer...');
+      timeoutId = setTimeout(() => {
+        console.log('⏰ Connection timeout reached');
+        setConnectionTimeout(true);
+      }, 30000); // 30 second timeout
+    } else {
+      setConnectionTimeout(false);
+    }
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [connecting]);
 
   const {
     portfolio,
@@ -43,6 +63,54 @@ const Portfolio: React.FC = React.memo(() => {
     alert('To add tokens to your portfolio, use your Solana wallet or a DEX like Raydium to acquire tokens.');
   }, []);
 
+  // Show connection timeout message
+  if (connectionTimeout && connecting) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-center space-y-6">
+        <div className="text-yellow-500">
+          <Wallet className="h-16 w-16 mx-auto mb-4" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold text-white mb-2">Connection Taking Too Long</h2>
+          <p className="text-gray-400 mb-6 max-w-md">
+            A conexão com a carteira está demorando mais que o esperado. 
+            Verifique se a Phantom está desbloqueada e tente novamente.
+          </p>
+          <div className="space-y-3">
+            <WalletMultiButton className="!bg-yellow-600 hover:!bg-yellow-700" />
+            <div className="text-sm text-gray-500 space-y-1">
+              <p>• Certifique-se que a Phantom está instalada e desbloqueada</p>
+              <p>• Verifique se está na rede Devnet (para testes)</p>
+              <p>• Recarregue a página se necessário</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show connecting state
+  if (connecting) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-center space-y-6">
+        <div className="text-blue-500">
+          <div className="animate-spin">
+            <Wallet className="h-16 w-16 mx-auto mb-4" />
+          </div>
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold text-white mb-2">Conectando com {wallet?.adapter.name}</h2>
+          <p className="text-gray-400 mb-6">
+            Aprovar a conexão na sua carteira...
+          </p>
+          <div className="text-sm text-gray-500">
+            <p>⏳ Aguardando aprovação na carteira</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Show wallet connection prompt if not connected
   if (!isWalletConnected) {
     return (
@@ -54,6 +122,9 @@ const Portfolio: React.FC = React.memo(() => {
             Connect your Solana wallet to view your portfolio and track your assets
           </p>
           <WalletMultiButton className="!bg-blue-600 hover:!bg-blue-700" />
+          <div className="mt-4 text-sm text-gray-500">
+            <p>💡 Usando Devnet para testes - certifique-se que sua carteira está na rede correta</p>
+          </div>
         </div>
       </div>
     );
