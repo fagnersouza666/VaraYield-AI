@@ -9,24 +9,24 @@ import { PhantomWalletAdapterWithTimeout } from '../utils/wallet-timeout';
 // Use multiple reliable endpoints with automatic fallback
 const getEndpoint = () => {
   const configuredEndpoint = import.meta.env.VITE_VARA_RPC_URL;
+  const backup1 = import.meta.env.VITE_VARA_RPC_BACKUP_1;
+  const backup2 = import.meta.env.VITE_VARA_RPC_BACKUP_2;
+  const backup3 = import.meta.env.VITE_VARA_RPC_BACKUP_3;
   
-  // List of working free endpoints in order of preference (updated 2024)
+  // List of working mainnet endpoints in order of preference (updated 2024)
   const reliableEndpoints = [
-    'https://api.devnet.solana.com', // Devnet for testing - more stable
-    'https://api.mainnet-beta.solana.com', // Official Solana
-    clusterApiUrl('devnet'), // Devnet fallback - better for development
-    clusterApiUrl('mainnet-beta'), // Mainnet fallback
-  ];
+    configuredEndpoint || 'https://api.mainnet-beta.solana.com', // Primary mainnet
+    backup1 || 'https://rpc.ankr.com/solana', // Ankr backup
+    backup2 || 'https://solana-api.projectserum.com', // Serum backup
+    backup3 || 'https://rpc.magic.eden/mainnet', // Magic Eden backup
+    clusterApiUrl('mainnet-beta'), // Official fallback
+  ].filter(Boolean);
   
-  // If configured endpoint exists and is not empty, try it first
-  if (configuredEndpoint && configuredEndpoint.trim() !== '') {
-    console.log('🔧 Using configured RPC endpoint:', configuredEndpoint);
-    return configuredEndpoint;
-  }
-  
-  // Default to first reliable endpoint
+  // Use the first configured endpoint
   const endpoint = reliableEndpoints[0];
-  console.log('🌐 Using default RPC endpoint:', endpoint);
+  console.log('🌐 Using Solana mainnet RPC endpoint:', endpoint);
+  console.log('🔄 Available fallback endpoints:', reliableEndpoints.length - 1);
+  
   return endpoint;
 };
 

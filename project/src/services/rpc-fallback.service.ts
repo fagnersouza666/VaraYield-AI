@@ -12,48 +12,57 @@ export interface EndpointConfig {
 
 export class RPCFallbackService {
   private static instance: RPCFallbackService;
-  private endpoints: EndpointConfig[] = [
-    {
-      url: 'https://api.devnet.solana.com',
-      name: 'Official Devnet',
-      priority: 1,
-      isWorking: true,
-      lastChecked: 0,
-      errorCount: 0,
-    },
-    {
-      url: 'https://rpc.ankr.com/solana_devnet',
-      name: 'Ankr Devnet',
-      priority: 2,
-      isWorking: true,
-      lastChecked: 0,
-      errorCount: 0,
-    },
-    {
-      url: clusterApiUrl('devnet'),
-      name: 'clusterApiUrl Devnet',
-      priority: 3,
-      isWorking: true,
-      lastChecked: 0,
-      errorCount: 0,
-    },
-    {
-      url: 'https://api.testnet.solana.com',
-      name: 'Official Testnet',
-      priority: 4,
-      isWorking: true,
-      lastChecked: 0,
-      errorCount: 0,
-    },
-    {
-      url: clusterApiUrl('testnet'),
-      name: 'clusterApiUrl Testnet',
-      priority: 5,
-      isWorking: true,
-      lastChecked: 0,
-      errorCount: 0,
-    },
-  ];
+  private endpoints: EndpointConfig[] = this.initializeEndpoints();
+
+  private initializeEndpoints(): EndpointConfig[] {
+    const configuredRpc = import.meta.env.VITE_VARA_RPC_URL || 'https://api.mainnet-beta.solana.com';
+    const backup1 = import.meta.env.VITE_VARA_RPC_BACKUP_1 || 'https://rpc.ankr.com/solana';
+    const backup2 = import.meta.env.VITE_VARA_RPC_BACKUP_2 || 'https://solana-api.projectserum.com';
+    const backup3 = import.meta.env.VITE_VARA_RPC_BACKUP_3 || 'https://rpc.magic.eden/mainnet';
+
+    return [
+      {
+        url: configuredRpc,
+        name: 'Primary Mainnet',
+        priority: 1,
+        isWorking: true,
+        lastChecked: 0,
+        errorCount: 0,
+      },
+      {
+        url: backup1,
+        name: 'Ankr Mainnet',
+        priority: 2,
+        isWorking: true,
+        lastChecked: 0,
+        errorCount: 0,
+      },
+      {
+        url: backup2,
+        name: 'Serum Mainnet',
+        priority: 3,
+        isWorking: true,
+        lastChecked: 0,
+        errorCount: 0,
+      },
+      {
+        url: backup3,
+        name: 'Magic Eden Mainnet',
+        priority: 4,
+        isWorking: true,
+        lastChecked: 0,
+        errorCount: 0,
+      },
+      {
+        url: clusterApiUrl('mainnet-beta'),
+        name: 'Official Mainnet Fallback',
+        priority: 5,
+        isWorking: true,
+        lastChecked: 0,
+        errorCount: 0,
+      },
+    ];
+  }
 
   private currentConnection: Connection | null = null;
   private currentEndpointIndex = 0;

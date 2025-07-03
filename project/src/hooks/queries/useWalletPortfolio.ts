@@ -17,14 +17,27 @@ export const useWalletBalances = (enabled: boolean = true) => {
 
   return useQuery({
     queryKey: ['wallet', 'balances', publicKey?.toString()],
-    queryFn: () => {
+    queryFn: async () => {
       if (!publicKey) {
         throw new RaydiumError('Wallet not connected');
       }
-      return walletService.getWalletBalances(publicKey);
+      
+      console.log('🔄 Fetching wallet balances for:', publicKey.toString());
+      const startTime = Date.now();
+      
+      try {
+        const result = await walletService.getWalletBalances(publicKey);
+        const duration = Date.now() - startTime;
+        console.log('✅ Wallet balances fetched successfully in', duration, 'ms');
+        return result;
+      } catch (error) {
+        const duration = Date.now() - startTime;
+        console.error('❌ Failed to fetch wallet balances after', duration, 'ms:', error);
+        throw error;
+      }
     },
     enabled: enabled && connected && !!publicKey,
-    staleTime: 60 * 1000, // 1 minute
+    staleTime: 30 * 1000, // 30 seconds (reduced for better UX)
     gcTime: 5 * 60 * 1000, // 5 minutes
     retry: (failureCount, error) => {
       // Don't retry wallet connection errors

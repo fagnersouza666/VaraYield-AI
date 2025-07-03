@@ -2,7 +2,7 @@ import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
 
 export class PhantomWalletAdapterWithTimeout extends PhantomWalletAdapter {
-  private connectTimeout: number = 15000; // 15 seconds timeout
+  private connectTimeout: number = 8000; // 8 seconds timeout for better UX
 
   constructor(config: { network?: WalletAdapterNetwork } = {}) {
     super(config);

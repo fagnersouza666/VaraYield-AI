@@ -14,15 +14,29 @@ import {
 } from '../types/portfolio.types';
 import { WalletService, TokenBalance } from '../types/wallet.types';
 import { RaydiumError } from '../../utils/errors';
+import { EnhancedSolanaWalletService } from './enhanced-wallet.service';
 
 export class WalletPortfolioService implements PortfolioService {
   private publicKey: PublicKey | null = null;
+  private enhancedWalletService: EnhancedSolanaWalletService | null = null;
+  private useEnhancedService: boolean = true; // Enable enhanced service by default
 
   constructor(
     private walletService: WalletService,
     publicKey: PublicKey | null = null
   ) {
     this.publicKey = publicKey;
+    
+    // Try to create enhanced service if we have a connection
+    try {
+      if ('connection' in walletService && walletService.connection) {
+        this.enhancedWalletService = new EnhancedSolanaWalletService(walletService.connection);
+        console.log('✅ Enhanced wallet service initialized');
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to initialize enhanced wallet service, using fallback:', error);
+      this.useEnhancedService = false;
+    }
   }
 
   setPublicKey(publicKey: PublicKey | null): void {
@@ -36,7 +50,21 @@ export class WalletPortfolioService implements PortfolioService {
 
     try {
       console.log('🔄 Getting portfolio for wallet:', this.publicKey.toString());
-      const walletBalance = await this.walletService.getWalletBalances(this.publicKey);
+      
+      // Use enhanced service if available, fallback to regular service
+      let walletBalance;
+      if (this.useEnhancedService && this.enhancedWalletService) {
+        console.log('🚀 Using enhanced wallet service for better performance');
+        try {
+          walletBalance = await this.enhancedWalletService.getWalletBalances(this.publicKey);
+        } catch (enhancedError) {
+          console.warn('⚠️ Enhanced service failed, falling back to regular service:', enhancedError);
+          walletBalance = await this.walletService.getWalletBalances(this.publicKey);
+        }
+      } else {
+        console.log('📡 Using regular wallet service');
+        walletBalance = await this.walletService.getWalletBalances(this.publicKey);
+      }
 
       console.log('📊 Wallet data:', {
         solBalance: walletBalance.solBalance,
@@ -331,30 +359,13 @@ export class WalletPortfolioService implements PortfolioService {
 
   private getPeriodDays(period: PortfolioPerformance['period']): number {
     switch (period) {
-      case '1d': return 1;
+      case '24h': return 1;
       case '7d': return 7;
       case '30d': return 30;
       case '90d': return 90;
       case '1y': return 365;
+      case 'all': return 365;
       default: return 7;
     }
   }
-
-  // Wallet portfolio doesn't support these operations
-  async createPosition(): Promise<Position> {
-    throw new RaydiumError('Cannot create positions in wallet portfolio. Use your wallet to acquire tokens.');
-  }
-
-  async updatePosition(): Promise<Position> {
-    throw new RaydiumError('Cannot update positions in wallet portfolio. Positions are based on actual wallet balances.');
-  }
-
-  async deletePosition(): Promise<void> {
-    throw new RaydiumError('Cannot delete positions in wallet portfolio. Use your wallet to transfer or swap tokens.');
-  }
-
-  async rebalancePortfolio(): Promise<{ summary: PortfolioSummary; positions: Position[] }> {
-    throw new RaydiumError('Wallet portfolio rebalancing requires external DEX integration.');
-  }
-}
 }

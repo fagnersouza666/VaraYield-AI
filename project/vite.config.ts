@@ -40,7 +40,7 @@ export default defineConfig({
     sourcemap: false, // Desabilitar sourcemaps em produção
   },
   server: {
-    host: '0.0.0.0', // Permite acesso de qualquer IP
+    host: 'localhost', // Força uso do localhost
     port: 5173,
     strictPort: false, // Permite usar outra porta se 5173 estiver ocupada
     open: true, // Abre automaticamente no navegador
