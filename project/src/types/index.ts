@@ -1,4 +1,4 @@
-export type PageView = 'dashboard' | 'portfolio' | 'analytics' | 'risk-management' | 'settings';
+export type PageView = 'dashboard' | 'portfolio' | 'analytics' | 'pool-analytics' | 'risk-management' | 'settings' | 'debug';
 export type RiskLevel = 'low' | 'medium' | 'high';
 
 export interface ProtocolData {
@@ -27,7 +27,7 @@ export interface AppState {
   readonly isOptimizing: boolean;
   readonly lastOptimizationTime: string;
   readonly nextRebalanceTime: string;
-  
+
   setCurrentPage: (page: PageView) => void;
   setRiskLevel: (level: RiskLevel) => void;
   setOptimizing: (isOptimizing: boolean) => void;

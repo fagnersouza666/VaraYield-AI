@@ -9,6 +9,7 @@ import Sidebar from './components/Sidebar';
 import { useAppStore } from './store/useAppStore';
 import { PAGE_VIEWS } from './shared/constants';
 import { WalletConnectionDebug } from './components/debug/WalletConnectionDebug';
+import { WalletDebugger } from './components/debug/WalletDebugger';
 
 // Lazy loading das páginas
 const Dashboard = lazy(() => import('./components/Dashboard'));
@@ -37,7 +38,7 @@ const AppContent: React.FC = () => {
       case PAGE_VIEWS.SETTINGS:
         return <Settings />;
       case PAGE_VIEWS.DEBUG:
-        return <SimpleWalletDebug />;
+        return <WalletDebugger />;
       default:
         return <Dashboard />;
     }
