@@ -15,7 +15,7 @@ const SimpleWalletDebug: React.FC = () => {
   const { portfolio, isLoading, error, refetchAll } = useWalletPortfolioDashboard();
   const [currentEndpoint, setCurrentEndpoint] = useState<any>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [walletMode, setWalletModeState] = useState<WalletMode>('error');
+  const [walletMode, setWalletModeState] = useState<WalletMode>('real'); // Production: only real data
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const rpcFallback = RPCFallbackService.getInstance();
@@ -116,54 +116,28 @@ const SimpleWalletDebug: React.FC = () => {
       </div>
 
       <div className="space-y-6">
-        {/* Wallet Mode Configuration */}
-        <div className="bg-gray-700 rounded-lg p-4">
+        {/* Production Mode Status */}
+        <div className="bg-blue-900/20 border border-blue-500/50 rounded-lg p-4">
           <div className="flex items-center mb-3">
             <Settings className="h-5 w-5 text-blue-400 mr-2" />
-            <h3 className="font-medium text-white">Modo do Portfólio</h3>
+            <h3 className="font-medium text-blue-400">🏭 Modo Produção</h3>
           </div>
           <div className="space-y-3">
-            <p className="text-gray-300 text-sm">Escolha como o sistema deve se comportar quando os servidores RPC falham:</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <button
-                onClick={() => handleWalletModeChange('error')}
-                className={`p-3 rounded-lg border text-sm font-medium transition-colors ${walletMode === 'error'
-                    ? 'bg-red-600 border-red-500 text-white'
-                    : 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'
-                  }`}
-              >
-                <div className="text-left">
-                  <div className="font-semibold">❌ Mostrar Erro</div>
-                  <div className="text-xs opacity-80">Mostra erro real quando RPC falha</div>
-                </div>
-              </button>
-              <button
-                onClick={() => handleWalletModeChange('real')}
-                className={`p-3 rounded-lg border text-sm font-medium transition-colors ${walletMode === 'real'
-                    ? 'bg-blue-600 border-blue-500 text-white'
-                    : 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'
-                  }`}
-              >
-                <div className="text-left">
-                  <div className="font-semibold">📡 Apenas Real</div>
-                  <div className="text-xs opacity-80">Só tenta usar dados reais</div>
-                </div>
-              </button>
-              <button
-                onClick={() => handleWalletModeChange('demo')}
-                className={`p-3 rounded-lg border text-sm font-medium transition-colors ${walletMode === 'demo'
-                    ? 'bg-yellow-600 border-yellow-500 text-white'
-                    : 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'
-                  }`}
-              >
-                <div className="text-left">
-                  <div className="font-semibold">🎭 Demonstração</div>
-                  <div className="text-xs opacity-80">Usa dados mock quando falha</div>
-                </div>
-              </button>
+            <div className="text-blue-200 text-sm">
+              <strong>Configuração atual:</strong> Apenas dados reais da blockchain Solana
             </div>
-            <div className="text-xs text-gray-400 bg-gray-800 p-2 rounded">
-              <strong>Modo atual:</strong> {walletMode === 'error' ? 'Mostrar Erro' : walletMode === 'real' ? 'Apenas Real' : 'Demonstração'}
+            <div className="bg-blue-800/30 p-3 rounded-lg">
+              <div className="text-blue-100 text-sm font-medium mb-2">✅ Funcionalidades ativas:</div>
+              <ul className="text-blue-200 text-xs space-y-1">
+                <li>• Conexão direta com mainnet Solana</li>
+                <li>• Sistema robusto de fallback RPC</li>
+                <li>• Busca otimizada de tokens (SPL + Token-2022)</li>
+                <li>• Preços em tempo real via CoinGecko/Jupiter</li>
+                <li>• Sem dados mock ou demonstrativos</li>
+              </ul>
+            </div>
+            <div className="text-xs text-blue-300 bg-blue-800/20 p-2 rounded">
+              <strong>💡 Para melhor performance:</strong> Configure um endpoint RPC pago (Helius, QuickNode, Alchemy)
             </div>
           </div>
         </div>
@@ -285,66 +259,25 @@ const SimpleWalletDebug: React.FC = () => {
             <p className="text-green-400">
               ✅ Carteira conectada! Verifique a aba Portfolio para ver seus tokens.
             </p>
-            {walletMode === 'error' && (
-              <p className="text-yellow-300 text-sm mt-2">
-                ⚠️ Modo atual: Mostrar Erro - Você verá erros se os servidores RPC estiverem indisponíveis.
-              </p>
-            )}
-            {walletMode === 'demo' && (
-              <p className="text-blue-300 text-sm mt-2">
-                🎭 Modo atual: Demonstração - Dados mock serão usados se RPC falhar.
-              </p>
-            )}
-            {walletMode === 'real' && (
-              <p className="text-blue-300 text-sm mt-2">
-                📡 Modo atual: Apenas Real - Somente dados reais da blockchain serão exibidos.
-              </p>
-            )}
+            <p className="text-blue-300 text-sm mt-2">
+              🏭 Modo Produção: Apenas dados reais da blockchain Solana serão exibidos. Sem fallbacks para dados mock.
+            </p>
           </div>
         )}
 
-        {/* Status based on wallet mode */}
-        {walletMode === 'error' && (
-          <div className="bg-red-900/20 border border-red-500/50 rounded-lg p-4">
-            <h3 className="font-medium text-red-400 mb-2">❌ Modo: Mostrar Erros Reais</h3>
-            <p className="text-red-300 text-sm mb-3">
-              Quando os servidores RPC estão indisponíveis, você verá os erros reais ao invés de dados demonstrativos.
-            </p>
-            <div className="text-red-200 text-xs space-y-1">
-              <p>• <strong>Vantagem:</strong> Você sabe exatamente o que está acontecendo</p>
-              <p>• <strong>Desvantagem:</strong> Interface pode ficar vazia quando RPC falha</p>
-              <p>• <strong>Solução:</strong> Use provedores RPC pagos ou tente mais tarde</p>
-            </div>
+        {/* Production Mode Information */}
+        <div className="bg-green-900/20 border border-green-500/50 rounded-lg p-4">
+          <h3 className="font-medium text-green-400 mb-2">🏭 Modo Produção Ativo</h3>
+          <p className="text-green-300 text-sm mb-3">
+            Sistema configurado para funcionar exclusivamente com dados reais da blockchain Solana.
+          </p>
+          <div className="text-green-200 text-xs space-y-1">
+            <p>• <strong>Garantia:</strong> 100% dados reais da mainnet Solana</p>
+            <p>• <strong>Performance:</strong> Serviço enhanced para busca otimizada</p>
+            <p>• <strong>Confiabilidade:</strong> Sistema robusto de fallback RPC</p>
+            <p>• <strong>Transparência:</strong> Erros reais quando RPC indisponível</p>
           </div>
-        )}
-
-        {walletMode === 'demo' && (
-          <div className="bg-yellow-900/20 border border-yellow-500/50 rounded-lg p-4">
-            <h3 className="font-medium text-yellow-400 mb-2">🎭 Modo: Demonstração</h3>
-            <p className="text-yellow-300 text-sm mb-3">
-              Quando os servidores RPC falham, dados demonstrativos realistas são exibidos para testar a interface.
-            </p>
-            <div className="text-yellow-200 text-xs space-y-1">
-              <p>• <strong>Vantagem:</strong> Interface sempre funciona, mesmo com RPC indisponível</p>
-              <p>• <strong>Demonstração:</strong> Mostra dados realistas de portfólio para testes</p>
-              <p>• <strong>Produção:</strong> Configure endpoints RPC pagos para dados reais</p>
-            </div>
-          </div>
-        )}
-
-        {walletMode === 'real' && (
-          <div className="bg-blue-900/20 border border-blue-500/50 rounded-lg p-4">
-            <h3 className="font-medium text-blue-400 mb-2">📡 Modo: Apenas Dados Reais</h3>
-            <p className="text-blue-300 text-sm mb-3">
-              Apenas dados reais da blockchain Solana serão exibidos. Nenhum dado mock ou demonstrativo.
-            </p>
-            <div className="text-blue-200 text-xs space-y-1">
-              <p>• <strong>Garantia:</strong> Todos os dados são 100% reais da blockchain</p>
-              <p>• <strong>Requisito:</strong> Servidores RPC devem estar funcionando</p>
-              <p>• <strong>Recomendação:</strong> Use com endpoints RPC confiáveis</p>
-            </div>
-          </div>
-        )}
+        </div>
 
         {/* Portfolio Status */}
         <div className="bg-gray-700 rounded-lg p-4">
@@ -421,36 +354,20 @@ const SimpleWalletDebug: React.FC = () => {
           </div>
         )}
 
-        {/* Advanced Options */}
-        {showAdvanced && (
-          <div className="border-t border-gray-700 pt-3 mt-3">
-            <div className="text-xs text-gray-400 mb-2">Opções de Debug:</div>
-            <div className="space-y-2">
-              <button
-                onClick={handleDemoMode}
-                className="w-full text-left text-xs bg-blue-900/20 text-blue-300 p-2 rounded hover:bg-blue-900/30"
-              >
-                🎭 Usar Dados Demo (se RPC não funcionar)
-              </button>
-              <button
-                onClick={handleRealMode}
-                className="w-full text-left text-xs bg-green-900/20 text-green-300 p-2 rounded hover:bg-green-900/30"
-              >
-                🌐 Tentar Dados Reais (RPC)
-              </button>
+        {/* Production Troubleshooting */}
+        {portfolio?.summary.totalValue === 0 && (
+          <div className="bg-yellow-900/20 border border-yellow-500/50 rounded-lg p-4">
+            <div className="font-medium text-yellow-400 mb-2">💡 Valores zerados detectados</div>
+            <p className="text-yellow-300 text-sm mb-3">Possíveis causas em ambiente de produção:</p>
+            <ul className="text-yellow-200 text-xs space-y-1">
+              <li>• <strong>Carteira vazia:</strong> Nenhum token ou SOL na carteira</li>
+              <li>• <strong>RPC instável:</strong> Problemas temporários de conectividade</li>
+              <li>• <strong>Tokens sem preço:</strong> Tokens muito novos ou sem liquidez</li>
+              <li>• <strong>Rate limiting:</strong> Muitas requisições aos endpoints públicos</li>
+            </ul>
+            <div className="mt-3 p-2 bg-yellow-800/30 rounded text-xs text-yellow-100">
+              <strong>Solução:</strong> Configure um endpoint RPC pago para garantir dados consistentes em produção.
             </div>
-
-            {portfolio?.summary.totalValue === 0 && (
-              <div className="mt-2 text-xs text-yellow-400 bg-yellow-900/20 p-2 rounded">
-                <div className="font-medium">💡 Valores zerados podem indicar:</div>
-                <ul className="mt-1 space-y-1 text-xs">
-                  <li>• Carteira vazia (sem tokens)</li>
-                  <li>• Problemas de conectividade RPC</li>
-                  <li>• Tokens sem preços de mercado</li>
-                  <li>• Rede Devnet (tokens de teste)</li>
-                </ul>
-              </div>
-            )}
           </div>
         )}
       </div>

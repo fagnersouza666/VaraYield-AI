@@ -11,13 +11,14 @@ import { HttpClient } from '../types/api.types';
 import { RaydiumError, handleApiError } from '../../utils/errors';
 import { RPCFallbackService } from '../rpc-fallback.service';
 import { MockWalletService } from '../mock-wallet.service';
+import { PRODUCTION_CONFIG, isProductionMode } from '../../config/production';
 
 export type WalletMode = 'real' | 'error' | 'demo';
 
 export class SolanaWalletService implements WalletService {
   private rpcFallback: RPCFallbackService;
   private mockService: MockWalletService;
-  private walletMode: WalletMode = 'real'; // Default: try real data, show appropriate errors
+  private walletMode: WalletMode = 'real'; // Production mode: only real blockchain data
 
   constructor(
     private connection: Connection,
@@ -25,6 +26,12 @@ export class SolanaWalletService implements WalletService {
   ) {
     this.rpcFallback = RPCFallbackService.getInstance();
     this.mockService = new MockWalletService();
+    
+    // Force production mode if configured
+    if (isProductionMode()) {
+      this.walletMode = 'real';
+      console.log('🏭 Production mode detected - wallet service configured for real data only');
+    }
   }
 
   private async retryOperation<T>(operation: () => Promise<T>, maxRetries: number = 3, delay: number = 2000): Promise<T> {
@@ -70,11 +77,8 @@ export class SolanaWalletService implements WalletService {
     console.log('🔍 Fetching wallet balances for:', publicKey.toString());
     console.log('🔧 Wallet mode:', this.walletMode);
     
-    // If demo mode is enabled, use mock service directly
-    if (this.walletMode === 'demo') {
-      console.log('🎭 Using mock wallet service (demo mode enabled)');
-      return this.mockService.getWalletBalances(publicKey);
-    }
+    // Production mode: only real blockchain data, no mock fallbacks
+    console.log('🏭 Production mode: using only real blockchain data');
     
     try {
       // Get SOL balance using fallback service
@@ -89,20 +93,14 @@ export class SolanaWalletService implements WalletService {
       } catch (solError) {
         console.error('❌ Failed to fetch SOL balance with all endpoints:', solError);
         
-        // Handle based on wallet mode
-        if (this.walletMode === 'demo') {
-          console.log('🎭 Switching to mock wallet service for demonstration');
-          return this.mockService.getWalletBalances(publicKey);
-        } else {
-          // Error mode: throw the actual error instead of falling back to mock
-          throw new RaydiumError(
-            'Não foi possível conectar aos servidores da Solana. Todos os endpoints RPC estão indisponíveis ou com limite de taxa.', 
-            {
-              originalError: solError,
-              suggestion: 'Tente novamente mais tarde ou use um provedor RPC pago (Helius, QuickNode, Alchemy)'
-            }
-          );
-        }
+        // Production mode: always throw real errors, never use mock data
+        throw new RaydiumError(
+          'Não foi possível conectar aos servidores da Solana. Todos os endpoints RPC estão indisponíveis ou com limite de taxa.', 
+          {
+            originalError: solError,
+            suggestion: 'Configure um provedor RPC pago para produção (Helius, QuickNode, Alchemy) ou tente novamente mais tarde'
+          }
+        );
       }
 
       // Get token accounts using fallback service
@@ -119,20 +117,14 @@ export class SolanaWalletService implements WalletService {
       } catch (tokenError) {
         console.error('❌ Failed to fetch SPL token accounts with all endpoints:', tokenError);
         
-        // Handle based on wallet mode
-        if (this.walletMode === 'demo') {
-          console.log('🎭 Switching to mock wallet service for demonstration');
-          return this.mockService.getWalletBalances(publicKey);
-        } else {
-          // Error mode: throw the actual error
-          throw new RaydiumError(
-            'Não foi possível buscar as contas de tokens SPL. Servidores RPC indisponíveis.', 
-            {
-              originalError: tokenError,
-              suggestion: 'Verifique sua conexão ou tente um provedor RPC diferente'
-            }
-          );
-        }
+        // Production mode: always throw real errors for token accounts too
+        throw new RaydiumError(
+          'Não foi possível buscar as contas de tokens SPL. Servidores RPC indisponíveis.', 
+          {
+            originalError: tokenError,
+            suggestion: 'Configure um provedor RPC confiável para produção ou tente novamente mais tarde'
+          }
+        );
       }
 
       // Also check for Token-2022 program accounts

@@ -19,7 +19,7 @@ import { EnhancedSolanaWalletService } from './enhanced-wallet.service';
 export class WalletPortfolioService implements PortfolioService {
   private publicKey: PublicKey | null = null;
   private enhancedWalletService: EnhancedSolanaWalletService | null = null;
-  private useEnhancedService: boolean = true; // Enable enhanced service by default
+  private useEnhancedService: boolean = true; // Production: always use enhanced service for better performance
 
   constructor(
     private walletService: WalletService,
@@ -51,18 +51,20 @@ export class WalletPortfolioService implements PortfolioService {
     try {
       console.log('🔄 Getting portfolio for wallet:', this.publicKey.toString());
       
-      // Use enhanced service if available, fallback to regular service
+      // Production: prioritize enhanced service for optimal performance
       let walletBalance;
       if (this.useEnhancedService && this.enhancedWalletService) {
-        console.log('🚀 Using enhanced wallet service for better performance');
+        console.log('🏭 Production: Using enhanced wallet service for optimal performance');
         try {
           walletBalance = await this.enhancedWalletService.getWalletBalances(this.publicKey);
         } catch (enhancedError) {
-          console.warn('⚠️ Enhanced service failed, falling back to regular service:', enhancedError);
+          console.warn('⚠️ Enhanced service failed, trying regular service:', enhancedError);
+          // In production, still try fallback but log for monitoring
+          console.log('🔄 Fallback to regular wallet service');
           walletBalance = await this.walletService.getWalletBalances(this.publicKey);
         }
       } else {
-        console.log('📡 Using regular wallet service');
+        console.log('📡 Using regular wallet service (enhanced not available)');
         walletBalance = await this.walletService.getWalletBalances(this.publicKey);
       }
 
